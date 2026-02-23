@@ -250,7 +250,110 @@ body {
   border: 1px dashed var(--border);
 }
 
-/* ===== 签到成功横幅 ===== */
+/* ===== 时段状态卡片 ===== */
+.slot-status-bar {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.75rem;
+  margin-bottom: 1.5rem;
+}
+
+.slot-card {
+  padding: 0.9rem 1rem;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  background: var(--bg2);
+  transition: all 0.2s;
+}
+
+.slot-card-header {
+  display: flex; align-items: center; gap: 0.4rem;
+  margin-bottom: 0.35rem;
+}
+
+.slot-label { font-size: 0.9rem; font-weight: 600; }
+
+.slot-badge {
+  margin-left: auto;
+  font-size: 0.68rem; font-weight: 600;
+  padding: 0.15rem 0.5rem; border-radius: 20px;
+}
+
+.slot-badge-checked { background: rgba(34,197,94,0.15); color: var(--success); }
+.slot-badge-active { background: rgba(99,102,241,0.15); color: var(--primary-light); }
+.slot-badge-expired { background: rgba(148,163,184,0.1); color: var(--text-muted); }
+.slot-badge-upcoming { background: rgba(245,158,11,0.1); color: var(--warning); }
+
+.slot-card-time { font-size: 0.75rem; color: var(--text-muted); }
+
+.slot-card-detail {
+  display: flex; gap: 0.5rem; flex-wrap: wrap;
+  margin-top: 0.4rem; padding-top: 0.4rem;
+  border-top: 1px solid var(--border);
+  font-size: 0.72rem; color: var(--text-muted);
+}
+
+.slot-checked { border-color: rgba(34,197,94,0.25); background: rgba(34,197,94,0.04); }
+.slot-active { border-color: rgba(99,102,241,0.3); background: rgba(99,102,241,0.04); }
+.slot-expired { opacity: 0.55; }
+
+/* ===== 签退卡片（醒目） ===== */
+.checkout-card {
+  display: flex; align-items: center; gap: 1.25rem;
+  padding: 1.5rem 1.75rem;
+  background: linear-gradient(135deg, rgba(245,158,11,0.08), rgba(239,68,68,0.06));
+  border: 1.5px solid rgba(245,158,11,0.35);
+  border-radius: var(--radius);
+  margin-bottom: 1.5rem;
+  animation: fadeSlideIn 0.3s ease;
+}
+
+.checkout-card-info { flex: 1; }
+
+.checkout-card-title {
+  display: flex; align-items: center; gap: 0.5rem;
+  font-size: 1.05rem; font-weight: 600; color: var(--warning);
+  margin-bottom: 0.3rem;
+}
+
+.checkout-card-meta { font-size: 0.82rem; color: var(--text-muted); }
+
+.checkout-timer {
+  font-size: 1.3rem; font-weight: 700;
+  color: var(--warning); margin-top: 0.4rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.btn-checkout-lg {
+  display: flex; flex-direction: column; align-items: center; gap: 0.4rem;
+  padding: 1rem 1.5rem; border: none; border-radius: 12px;
+  background: var(--warning); color: #fff;
+  font-size: 0.95rem; font-weight: 600; cursor: pointer;
+  transition: all 0.2s; flex-shrink: 0;
+  animation: pulse-glow 2s ease-in-out infinite;
+}
+.btn-checkout-lg:hover { background: #d97706; transform: scale(1.03); }
+.btn-checkout-lg:disabled { opacity: 0.5; cursor: not-allowed; animation: none; }
+
+@keyframes pulse-glow {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(245,158,11,0.3); }
+  50% { box-shadow: 0 0 16px 4px rgba(245,158,11,0.25); }
+}
+
+/* ===== 已签退横幅 ===== */
+.checked-out-banner {
+  display: flex; align-items: center; gap: 1rem;
+  padding: 1.1rem 1.5rem;
+  background: rgba(148,163,184,0.06);
+  border: 1px solid rgba(148,163,184,0.15);
+  border-radius: var(--radius);
+  color: var(--text-muted);
+  margin-bottom: 1.5rem;
+  animation: fadeSlideIn 0.3s ease;
+}
+.checked-out-banner .sub { font-size: 0.8rem; color: var(--text-muted); margin-top: 0.2rem; }
+
+/* ===== 签到成功横幅（兼容旧引用） ===== */
 .success-banner {
   display: flex; align-items: center; gap: 1rem;
   padding: 1.25rem 1.5rem;
@@ -259,19 +362,24 @@ body {
   border-radius: var(--radius);
   color: var(--success);
   margin-bottom: 1.5rem;
+  animation: fadeSlideIn 0.3s ease;
 }
 .success-banner .sub { font-size: 0.8rem; color: var(--text-muted); margin-top: 0.2rem; }
-.success-banner.checked-out { background: rgba(148,163,184,0.08); border-color: rgba(148,163,184,0.2); color: var(--text-muted); }
 
-.btn-checkout {
-  display: flex; align-items: center; gap: 0.4rem;
-  padding: 0.5rem 1rem; border: none; border-radius: 8px;
-  background: rgba(239,68,68,0.15); color: var(--danger);
-  font-size: 0.85rem; font-weight: 500; cursor: pointer;
-  transition: background 0.15s; white-space: nowrap; flex-shrink: 0;
+@keyframes fadeSlideIn {
+  from { opacity: 0; transform: translateY(-8px); }
+  to { opacity: 1; transform: translateY(0); }
 }
-.btn-checkout:hover { background: rgba(239,68,68,0.25); }
-.btn-checkout:disabled { opacity: 0.5; cursor: not-allowed; }
+
+/* ===== 不在签到时段提示 ===== */
+.out-of-slot-hint {
+  display: flex; flex-direction: column; align-items: center; gap: 0.75rem;
+  padding: 3rem 2rem; text-align: center;
+  background: var(--bg2); border: 1px dashed var(--border);
+  border-radius: var(--radius); color: var(--text-muted);
+}
+.out-of-slot-hint div { font-size: 1rem; font-weight: 500; }
+.out-of-slot-hint small { font-size: 0.8rem; color: var(--text-muted); }
 
 /* ===== 座位图 ===== */
 .seat-map {
@@ -300,9 +408,9 @@ body {
   background: var(--bg3); color: var(--text-muted);
   cursor: pointer; transition: all 0.15s;
 }
-.seat:hover:not(:disabled) { border-color: var(--primary); color: var(--primary-light); }
+.seat:hover:not(:disabled) { border-color: var(--primary); color: var(--primary-light); transform: scale(1.08); }
 .seat.occupied { background: rgba(239,68,68,0.1); border-color: rgba(239,68,68,0.3); color: var(--danger); cursor: default; }
-.seat.selected { background: var(--primary); border-color: var(--primary); color: #fff; }
+.seat.selected { background: var(--primary); border-color: var(--primary); color: #fff; transform: scale(1.08); box-shadow: 0 0 10px rgba(99,102,241,0.3); }
 
 .seat-legend {
   display: flex; align-items: center; gap: 1.25rem;
