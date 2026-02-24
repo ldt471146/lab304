@@ -8,6 +8,7 @@
 - **座位预约** — 提前预约指定日期、时段的座位，支持取消
 - **排行榜** — 总积分排行与本月签到排行，支持学级内排名
 - **仪表板** — 展示个人签到统计、排名、今日预约等信息
+- **数据导出（管理员）** — 按日期范围导出所有人签到记录，支持 CSV / Excel 格式
 
 ## 技术栈
 
@@ -49,9 +50,9 @@ VITE_SUPABASE_ANON_KEY=你的_Supabase_Anon_Key
 
 | 名称 | 类型 | 说明 |
 |------|------|------|
-| `users` | 表 | 用户资料（student_id, name, grade, checkin_count, points） |
+| `users` | 表 | 用户资料（student_id, name, grade, checkin_count, points, is_admin） |
 | `seats` | 表 | 座位定义（seat_number, row_label, col_number, is_active） |
-| `checkins` | 表 | 签到记录（user_id, check_date, seat_id, checked_at, checked_out_at） |
+| `checkins` | 表 | 签到记录（user_id, check_date, seat_id, time_slot, checked_at, checked_out_at） |
 | `reservations` | 表 | 预约记录（user_id, seat_id, reserve_date, time_slot, status） |
 | `seat_status_today` | 视图 | 今日座位占用状态 |
 | `leaderboard` | 视图 | 总积分排行榜 |
