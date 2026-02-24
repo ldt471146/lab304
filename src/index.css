@@ -193,6 +193,11 @@ body {
   background: rgba(239,68,68,0.1);
   padding: 0.5rem 0.75rem; border-radius: 8px;
 }
+.success-msg {
+  font-size: 0.82rem; color: var(--success);
+  background: rgba(34,197,94,0.1);
+  padding: 0.5rem 0.75rem; border-radius: 8px;
+}
 .msg { padding: 0.6rem 1rem; border-radius: 8px; font-size: 0.875rem; margin: 0.75rem 0; }
 .msg.success { background: rgba(34,197,94,0.1); color: var(--success); }
 .msg.error { background: rgba(239,68,68,0.1); color: var(--danger); }

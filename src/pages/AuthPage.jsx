@@ -9,6 +9,7 @@ export default function AuthPage() {
   const [form, setForm] = useState({ email: '', password: '', name: '', student_id: '', grade: '2024' })
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const [registered, setRegistered] = useState(false)
 
   const set = (k, v) => setForm(f => ({ ...f, [k]: v }))
 
@@ -37,6 +38,7 @@ export default function AuthPage() {
         grade: form.grade,
       })
       if (profileError) setError(profileError.message)
+      else setRegistered(true)
     }
     setLoading(false)
   }
@@ -60,6 +62,10 @@ export default function AuthPage() {
             <UserPlus size={15} /> 注册
           </button>
         </div>
+
+        {registered && (
+          <div className="success-msg">注册成功！请查收邮箱并点击确认链接完成验证。</div>
+        )}
 
         <form onSubmit={mode === 'login' ? handleLogin : handleRegister} className="auth-form">
           {mode === 'register' && (
