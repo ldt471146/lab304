@@ -31,7 +31,7 @@ function AppRoutes() {
 
 export default function App() {
   return (
-    <BrowserRouter>
+    <BrowserRouter basename="/lab304">
       <AuthProvider>
         <AppRoutes />
       </AuthProvider>
