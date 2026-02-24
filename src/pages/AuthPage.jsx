@@ -23,7 +23,11 @@ export default function AuthPage() {
   async function handleRegister(e) {
     e.preventDefault()
     setLoading(true); setError('')
-    const { data, error } = await supabase.auth.signUp({ email: form.email, password: form.password })
+    const { data, error } = await supabase.auth.signUp({
+      email: form.email,
+      password: form.password,
+      options: { emailRedirectTo: window.location.origin + import.meta.env.BASE_URL },
+    })
     if (error) { setError(error.message); setLoading(false); return }
     if (data.user) {
       const { error: profileError } = await supabase.from('users').insert({
