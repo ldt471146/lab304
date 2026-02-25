@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
-import { CheckCircle, Clock, Star, Calendar, Download, FileSpreadsheet } from 'lucide-react'
+import { CheckCircle, Clock, Star, Calendar, Download, FileSpreadsheet, CalendarCheck } from 'lucide-react'
 import * as XLSX from 'xlsx'
 
 const SLOT_LABEL = { morning: '上午', afternoon: '下午', evening: '晚上' }
@@ -27,6 +27,18 @@ function buildExportRows(records) {
   }))
 }
 
+function buildReserveRows(records) {
+  return records.map(r => ({
+    '姓名': r.users?.name ?? '',
+    '学号': r.users?.student_id ?? '',
+    '学级': r.users?.grade ?? '',
+    '预约日期': r.reserve_date,
+    '时段': SLOT_LABEL[r.time_slot] ?? r.time_slot ?? '',
+    '座位号': r.seats?.seat_number ?? '',
+    '状态': r.status === 'active' ? '有效' : r.status === 'cancelled' ? '已取消' : r.status,
+  }))
+}
+
 function downloadCSV(rows, filename) {
   const headers = Object.keys(rows[0])
   const csv = '\uFEFF' + [
@@ -41,13 +53,13 @@ function downloadCSV(rows, filename) {
   URL.revokeObjectURL(a.href)
 }
 
-function downloadExcel(rows, filename) {
+function downloadExcel(rows, filename, sheetName = '签到记录') {
   const ws = XLSX.utils.json_to_sheet(rows)
   ws['!cols'] = Object.keys(rows[0]).map(k => ({
     wch: Math.max(k.length * 2, ...rows.map(r => String(r[k]).length)) + 2
   }))
   const wb = XLSX.utils.book_new()
-  XLSX.utils.book_append_sheet(wb, ws, '签到记录')
+  XLSX.utils.book_append_sheet(wb, ws, sheetName)
   XLSX.writeFile(wb, filename)
 }
 
@@ -60,6 +72,8 @@ export default function Dashboard() {
   const [endDate, setEndDate] = useState('')
   const [exporting, setExporting] = useState(false)
   const [exportMsg, setExportMsg] = useState(null)
+  const [resExporting, setResExporting] = useState(false)
+  const [resExportMsg, setResExportMsg] = useState(null)
 
   useEffect(() => {
     if (!profile) return
@@ -112,6 +126,34 @@ export default function Dashboard() {
     if (type === 'csv') downloadCSV(rows, filename + '.csv')
     else downloadExcel(rows, filename + '.xlsx')
     setExportMsg({ type: 'success', text: `已导出 ${rows.length} 条记录 (${type.toUpperCase()})` })
+  }
+
+  async function fetchReserveData() {
+    if (!startDate || !endDate) {
+      setResExportMsg({ type: 'error', text: '请选择日期范围' })
+      return null
+    }
+    setResExporting(true); setResExportMsg(null)
+    const { data, error } = await supabase
+      .from('reservations')
+      .select('reserve_date, time_slot, status, users(name, student_id, grade), seats(seat_number)')
+      .gte('reserve_date', startDate)
+      .lte('reserve_date', endDate)
+      .order('reserve_date')
+      .order('time_slot')
+    setResExporting(false)
+    if (error) { setResExportMsg({ type: 'error', text: error.message }); return null }
+    if (!data?.length) { setResExportMsg({ type: 'error', text: '该日期范围内无预约记录' }); return null }
+    return buildReserveRows(data)
+  }
+
+  async function handleReserveExport(type) {
+    const rows = await fetchReserveData()
+    if (!rows) return
+    const filename = `预约记录_${startDate}_${endDate}`
+    if (type === 'csv') downloadCSV(rows, filename + '.csv')
+    else downloadExcel(rows, filename + '.xlsx', '预约记录')
+    setResExportMsg({ type: 'success', text: `已导出 ${rows.length} 条预约 (${type.toUpperCase()})` })
   }
 
   const greeting = () => {
@@ -212,6 +254,24 @@ export default function Dashboard() {
               </button>
             </div>
             {exportMsg && <div className={`msg ${exportMsg.type}`}>{exportMsg.text}</div>}
+          </div>
+
+          <div className="section-title" style={{ marginTop: '1.5rem' }}><CalendarCheck size={16} /> 预约记录导出</div>
+          <div className="export-card">
+            <p style={{ fontSize: '0.82rem', color: 'var(--text-muted)', marginBottom: '0.75rem' }}>
+              使用上方日期范围，导出该区间内的所有预约记录（可用于安排值日）
+            </p>
+            <div className="export-actions">
+              <button className="btn-export csv" onClick={() => handleReserveExport('csv')} disabled={resExporting}>
+                <Download size={16} />
+                {resExporting ? '导出中...' : '导出 CSV'}
+              </button>
+              <button className="btn-export excel" onClick={() => handleReserveExport('excel')} disabled={resExporting}>
+                <FileSpreadsheet size={16} />
+                {resExporting ? '导出中...' : '导出 Excel'}
+              </button>
+            </div>
+            {resExportMsg && <div className={`msg ${resExportMsg.type}`}>{resExportMsg.text}</div>}
           </div>
         </div>
       )}
