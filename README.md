@@ -2,13 +2,16 @@
 
 实验室日常签到、座位预约与排行榜系统，适用于高校实验室考勤管理场景。
 
+**在线访问**：<https://ldt471146.github.io/lab304/>
+
 ## 功能
 
-- **签到 / 签退** — 按时段（上午 / 下午 / 晚上）签到，可选择座位，签退自动记录时长
+- **签到 / 签退** — 按时段（上午 / 下午 / 晚上）独立签到，选择座位，签退自动记录时长
 - **座位预约** — 提前预约指定日期、时段的座位，支持取消
 - **排行榜** — 总积分排行与本月签到排行，支持学级内排名
-- **仪表板** — 展示个人签到统计、排名、今日预约等信息
-- **数据导出（管理员）** — 按日期范围导出所有人签到记录，支持 CSV / Excel 格式
+- **仪表板** — 个人签到统计、排名、今日预约一览
+- **主题切换** — 浅色 / 深色主题自由切换，偏好自动保存
+- **数据导出（管理员）** — 签到记录 + 预约记录按日期范围导出，支持 CSV / Excel
 
 ## 技术栈
 
@@ -18,7 +21,8 @@
 | 构建工具 | Vite 7 |
 | 后端服务 | Supabase（Auth + PostgreSQL） |
 | 图标 | Lucide React |
-| 样式 | 自定义 CSS 深色主题 |
+| 样式 | 自定义 CSS（浅色 / 深色主题） |
+| 部署 | GitHub Pages（Actions 自动构建） |
 
 ## 快速开始
 
@@ -76,17 +80,18 @@ npm run build
 src/
 ├── main.jsx                 # 入口
 ├── App.jsx                  # 路由与认证状态管理
-├── index.css                # 全局深色主题样式
+├── index.css                # 全局主题样式
 ├── lib/
 │   └── supabase.js          # Supabase 客户端
 ├── context/
-│   └── AuthContext.jsx       # 认证上下文
+│   ├── AuthContext.jsx       # 认证上下文
+│   └── ThemeContext.jsx      # 主题上下文
 ├── components/
 │   └── NavBar.jsx           # 侧边导航栏
 └── pages/
     ├── AuthPage.jsx         # 登录 / 注册
     ├── SetupProfile.jsx     # 资料补全
-    ├── Dashboard.jsx        # 仪表板
+    ├── Dashboard.jsx        # 仪表板 + 管理员导出
     ├── CheckinPage.jsx      # 签到
     ├── ReservePage.jsx       # 预约
     └── LeaderboardPage.jsx  # 排行榜
