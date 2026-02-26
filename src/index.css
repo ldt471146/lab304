@@ -437,6 +437,13 @@ body {
   background: var(--bg3); color: var(--text-muted);
   cursor: pointer; transition: all 0.15s;
 }
+
+[data-theme="light"] .seat {
+  background: #f3f4f6;
+  border-color: rgba(59, 130, 246, 0.2);
+  color: #4b5563;
+}
+
 .seat:hover:not(:disabled) { border-color: var(--primary); color: var(--primary-light); transform: scale(1.08); }
 .seat.occupied { background: rgba(239,68,68,0.1); border-color: rgba(239,68,68,0.3); color: var(--danger); cursor: default; }
 .seat.selected { background: var(--primary); border-color: var(--primary); color: #fff; transform: scale(1.08); box-shadow: 0 0 10px rgba(99,102,241,0.3); }
