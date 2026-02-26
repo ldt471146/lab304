@@ -1,19 +1,19 @@
 /* ===== 全局变量 ===== */
 :root {
-  --primary: #6366f1;
-  --primary-light: #818cf8;
-  --primary-dark: #4f46e5;
-  --success: #22c55e;
+  --primary: #3b82f6;
+  --primary-light: #60a5fa;
+  --primary-dark: #1e40af;
+  --success: #10b981;
   --danger: #ef4444;
   --warning: #f59e0b;
-  --bg: #0f0f1a;
-  --bg2: #16182a;
-  --bg3: #1e2035;
-  --border: rgba(255,255,255,0.08);
-  --text: #e2e8f0;
-  --text-muted: #94a3b8;
+  --bg: #0a1428;
+  --bg2: #1a2a4a;
+  --bg3: #253556;
+  --border: rgba(100, 150, 255, 0.15);
+  --text: #e8f0ff;
+  --text-muted: #8ba3d0;
   --radius: 12px;
-  --shadow: 0 4px 24px rgba(0,0,0,0.4);
+  --shadow: 0 8px 32px rgba(15, 50, 120, 0.3);
 }
 
 [data-theme="light"] {
@@ -36,7 +36,7 @@
 
 body {
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-  background: var(--bg);
+  background: linear-gradient(135deg, #0a1428 0%, #1a3a6a 50%, #0f2a4a 100%);
   color: var(--text);
   min-height: 100vh;
   -webkit-font-smoothing: antialiased;
@@ -121,7 +121,9 @@ body {
 .auth-bg {
   min-height: 100vh;
   display: flex; align-items: center; justify-content: center;
-  background: radial-gradient(ellipse at 60% 40%, rgba(99,102,241,0.15) 0%, transparent 60%), var(--bg);
+  background: linear-gradient(135deg, #0a1428 0%, #1a3a6a 50%, #0f2a52 100%);
+  position: relative;
+  overflow: hidden;
 }
 
 .auth-card {
@@ -188,12 +190,16 @@ body {
 /* ===== 按钮 ===== */
 .btn-primary {
   width: 100%; padding: 0.75rem;
-  background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+  background: linear-gradient(135deg, #3b82f6, #1e40af);
   color: #fff; border: none; border-radius: 10px;
   font-size: 0.95rem; font-weight: 500; cursor: pointer;
-  transition: opacity 0.15s;
+  transition: all 0.2s;
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
 }
-.btn-primary:hover { opacity: 0.9; }
+.btn-primary:hover {
+  box-shadow: 0 6px 16px rgba(59, 130, 246, 0.4);
+  transform: translateY(-2px);
+}
 .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
 
 .icon-btn {
@@ -221,7 +227,7 @@ body {
 
 /* ===== Dashboard ===== */
 .dashboard-hero {
-  background: linear-gradient(135deg, var(--primary-dark), #312e81);
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.15), rgba(30, 64, 175, 0.1));
   border-radius: var(--radius);
   padding: 1.75rem;
   margin-bottom: 1.5rem;
@@ -229,6 +235,7 @@ body {
   align-items: center;
   justify-content: space-between;
   gap: 1rem;
+  box-shadow: 0 4px 16px rgba(59, 130, 246, 0.2);
 }
 .dashboard-hero h2 { font-size: 1.3rem; margin-bottom: 0.4rem; }
 .badge {
