@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
 import { SLOT_LABEL, getLocalDate } from '../lib/constants'
-import { LayoutDashboard, CheckCircle, Clock, Star, Calendar, Download, FileSpreadsheet, CalendarCheck } from 'lucide-react'
+import { LayoutDashboard, CheckCircle, Clock, Star, Calendar, Download, FileSpreadsheet, CalendarCheck, Megaphone, Pin, Plus, Pencil, Trash2, X } from 'lucide-react'
 import * as XLSX from 'xlsx'
 
 function formatDateTime(iso) {
@@ -74,10 +74,16 @@ export default function Dashboard() {
   const [exportMsg, setExportMsg] = useState(null)
   const [resExporting, setResExporting] = useState(false)
   const [resExportMsg, setResExportMsg] = useState(null)
+  const [announcements, setAnnouncements] = useState([])
+  const [editingAnn, setEditingAnn] = useState(null)
+  const [annForm, setAnnForm] = useState({ title: '', content: '' })
+  const [annLoading, setAnnLoading] = useState(false)
+  const [showAnnModal, setShowAnnModal] = useState(false)
 
   useEffect(() => {
     if (!profile) return
     fetchData()
+    fetchAnnouncements()
     const now = new Date()
     const y = now.getFullYear()
     const m = String(now.getMonth() + 1).padStart(2, '0')
@@ -101,6 +107,75 @@ export default function Dashboard() {
     setTodayCheckins(checkinRes.data || [])
     setMyReservations(reserveRes.data || [])
     setMyRank(rankRes.data)
+  }
+
+  async function fetchAnnouncements() {
+    const { data } = await supabase.from('announcements').select('*')
+      .order('is_pinned', { ascending: false })
+      .order('created_at', { ascending: false })
+      .limit(10)
+    const list = data || []
+    setAnnouncements(list)
+    if (list.length && profile) {
+      const latestId = Math.max(...list.map(a => a.id))
+      const seenId = Number(localStorage.getItem(`lab304_ann_seen_${profile.id}`)) || 0
+      if (latestId > seenId) setShowAnnModal(true)
+    }
+  }
+
+  function handleAckAnn() {
+    if (announcements.length && profile) {
+      const latestId = Math.max(...announcements.map(a => a.id))
+      localStorage.setItem(`lab304_ann_seen_${profile.id}`, String(latestId))
+    }
+    setShowAnnModal(false)
+  }
+
+  function startEditAnn(ann) {
+    setEditingAnn(ann.id)
+    setAnnForm({ title: ann.title, content: ann.content })
+  }
+
+  function cancelEditAnn() {
+    setEditingAnn(null)
+    setAnnForm({ title: '', content: '' })
+  }
+
+  async function handleSaveAnn() {
+    if (!annForm.title.trim() || !annForm.content.trim()) return
+    setAnnLoading(true)
+    if (editingAnn === 'new') {
+      await supabase.from('announcements').insert({ title: annForm.title, content: annForm.content })
+    } else {
+      await supabase.from('announcements').update({
+        title: annForm.title, content: annForm.content, updated_at: new Date().toISOString(),
+      }).eq('id', editingAnn)
+    }
+    cancelEditAnn()
+    await fetchAnnouncements()
+    setAnnLoading(false)
+  }
+
+  async function handleDeleteAnn(id) {
+    if (!confirm('确定删除此公告？')) return
+    await supabase.from('announcements').delete().eq('id', id)
+    fetchAnnouncements()
+  }
+
+  async function handleTogglePin(ann) {
+    await supabase.from('announcements').update({ is_pinned: !ann.is_pinned }).eq('id', ann.id)
+    fetchAnnouncements()
+  }
+
+  function relativeTime(iso) {
+    const diff = Date.now() - new Date(iso).getTime()
+    const m = Math.floor(diff / 60000)
+    if (m < 1) return '刚刚'
+    if (m < 60) return `${m} 分钟前`
+    const h = Math.floor(m / 60)
+    if (h < 24) return `${h} 小时前`
+    const d = Math.floor(h / 24)
+    return `${d} 天前`
   }
 
   async function fetchExportData() {
@@ -215,6 +290,61 @@ export default function Dashboard() {
         </div>
       </div>
 
+      <div className="announcement-board">
+        <div className="announcement-header">
+          <div className="section-title"><Megaphone size={16} /> 公告栏</div>
+          {profile.is_admin && !editingAnn && (
+            <button className="btn-ann-add" onClick={() => { setEditingAnn('new'); setAnnForm({ title: '', content: '' }) }}>
+              <Plus size={14} /> 新增
+            </button>
+          )}
+        </div>
+
+        {editingAnn && (
+          <div className="announcement-form">
+            <input
+              className="date-input" placeholder="公告标题"
+              value={annForm.title} onChange={e => setAnnForm(f => ({ ...f, title: e.target.value }))}
+            />
+            <textarea
+              className="date-input ann-textarea" placeholder="公告内容" rows={6}
+              value={annForm.content} onChange={e => setAnnForm(f => ({ ...f, content: e.target.value }))}
+            />
+            <div className="announcement-form-actions">
+              <button className="btn-ann-save" onClick={handleSaveAnn} disabled={annLoading}>
+                {annLoading ? '保存中...' : '保存'}
+              </button>
+              <button className="btn-ann-cancel" onClick={cancelEditAnn}><X size={14} /> 取消</button>
+            </div>
+          </div>
+        )}
+
+        {announcements.length === 0
+          ? <div className="announcement-empty">暂无公告</div>
+          : announcements.map(ann => (
+            <div key={ann.id} className={`announcement-item${ann.is_pinned ? ' pinned' : ''}`}>
+              <div className="announcement-title">
+                {ann.is_pinned && <Pin size={13} className="pin-icon" />}
+                {ann.title}
+              </div>
+              <div className="announcement-content">{ann.content}</div>
+              <div className="announcement-meta">
+                <span>{relativeTime(ann.created_at)}</span>
+                {profile.is_admin && (
+                  <span className="ann-actions">
+                    <button onClick={() => handleTogglePin(ann)} title={ann.is_pinned ? '取消置顶' : '置顶'}>
+                      <Pin size={13} />
+                    </button>
+                    <button onClick={() => startEditAnn(ann)} title="编辑"><Pencil size={13} /></button>
+                    <button onClick={() => handleDeleteAnn(ann.id)} title="删除"><Trash2 size={13} /></button>
+                  </span>
+                )}
+              </div>
+            </div>
+          ))
+        }
+      </div>
+
       <div className="section-title"><Calendar size={16} /> 今日预约</div>
       {myReservations.length === 0
         ? <div className="empty-hint">今日暂无预约</div>
@@ -272,6 +402,26 @@ export default function Dashboard() {
               </button>
             </div>
             {resExportMsg && <div className={`msg ${resExportMsg.type}`}>{resExportMsg.text}</div>}
+          </div>
+        </div>
+      )}
+      {showAnnModal && announcements.length > 0 && (
+        <div className="ann-modal-overlay" onClick={handleAckAnn}>
+          <div className="ann-modal" onClick={e => e.stopPropagation()}>
+            <div className="ann-modal-title"><Megaphone size={18} /> 系统公告</div>
+            <div className="ann-modal-list">
+              {announcements.map(ann => (
+                <div key={ann.id} className={`announcement-item${ann.is_pinned ? ' pinned' : ''}`}>
+                  <div className="announcement-title">
+                    {ann.is_pinned && <Pin size={13} className="pin-icon" />}
+                    {ann.title}
+                  </div>
+                  <div className="announcement-content" style={{ WebkitLineClamp: 'unset' }}>{ann.content}</div>
+                  <div className="announcement-meta"><span>{relativeTime(ann.created_at)}</span></div>
+                </div>
+              ))}
+            </div>
+            <button className="btn-ann-ack" onClick={handleAckAnn}>已收到</button>
           </div>
         </div>
       )}
