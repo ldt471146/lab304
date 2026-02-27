@@ -36,18 +36,18 @@
   --neon-red: #d4003a;
   --neon-yellow: #c08a00;
   --neon-orange: #cc5500;
-  --bg-deep: #f0f2f5;
-  --bg-panel: #ffffff;
-  --bg-card: #f8f9fb;
-  --bg-input: #ffffff;
-  --border-glow: rgba(0, 144, 184, 0.25);
-  --border-dim: rgba(0, 144, 184, 0.12);
+  --bg-deep: #d8dce4;
+  --bg-panel: #e4e8ee;
+  --bg-card: #eaecf1;
+  --bg-input: #e0e4ea;
+  --border-glow: rgba(0, 144, 184, 0.28);
+  --border-dim: rgba(0, 144, 184, 0.14);
   --text: #2d3748;
   --text-bright: #1a202c;
-  --text-muted: #718096;
-  --shadow-cyan: 0 2px 8px rgba(0, 144, 184, 0.1);
-  --shadow-green: 0 2px 8px rgba(0, 168, 46, 0.1);
-  --shadow-purple: 0 2px 8px rgba(139, 28, 199, 0.1);
+  --text-muted: #5a6a7e;
+  --shadow-cyan: 0 2px 8px rgba(0, 144, 184, 0.12);
+  --shadow-green: 0 2px 8px rgba(0, 168, 46, 0.12);
+  --shadow-purple: 0 2px 8px rgba(139, 28, 199, 0.12);
 }
 
 /* --- Reset --- */
