@@ -5,7 +5,7 @@ const AuthContext = createContext(null)
 
 export function AuthProvider({ children }) {
   const [session, setSession] = useState(undefined)
-  const [profile, setProfile] = useState(undefined) // undefined=加载中, null=无资料, object=有资料
+  const [profile, setProfile] = useState(undefined)
 
   useEffect(() => {
     // Handle PKCE code or token_hash from email confirmation redirect
@@ -14,30 +14,20 @@ export function AuthProvider({ children }) {
     const tokenHash = params.get('token_hash')
     const type = params.get('type')
 
-    const handleCallback = async () => {
-      if (code) {
-        await supabase.auth.exchangeCodeForSession(code)
-      } else if (tokenHash) {
-        await supabase.auth.verifyOtp({ token_hash: tokenHash, type: type || 'email' })
-      }
-      // Clean URL params after handling
-      if (code || tokenHash) {
-        window.history.replaceState({}, '', window.location.pathname)
-      }
+    if (code) {
+      supabase.auth.exchangeCodeForSession(code)
+    } else if (tokenHash) {
+      supabase.auth.verifyOtp({ token_hash: tokenHash, type: type || 'email' })
+    }
+    if (code || tokenHash) {
+      window.history.replaceState({}, '', window.location.pathname)
     }
 
-    handleCallback().then(() => {
-      supabase.auth.getSession().then(({ data: { session } }) => {
-        setSession(session)
-        if (session) fetchProfile(session.user.id)
-        else { setSession(null); setProfile(null) }
-      })
-    })
-
+    // Single source of truth: onAuthStateChange handles all session updates
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_e, session) => {
       setSession(session)
       if (session) fetchProfile(session.user.id)
-      else { setProfile(null) }
+      else setProfile(null)
     })
     return () => subscription.unsubscribe()
   }, [])
@@ -48,6 +38,7 @@ export function AuthProvider({ children }) {
       .select('*')
       .eq('id', userId)
       .maybeSingle()
+    if (error) console.error('fetchProfile:', error.message)
     setProfile(error ? null : data)
   }
 

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
 import { Trophy, Medal } from 'lucide-react'
@@ -9,15 +9,16 @@ export default function LeaderboardPage() {
   const [list, setList] = useState([])
   const [loading, setLoading] = useState(true)
 
-  useEffect(() => { fetchList() }, [tab])
-
-  async function fetchList() {
+  const fetchList = useCallback(async () => {
     setLoading(true)
     const view = tab === 'total' ? 'leaderboard' : 'leaderboard_monthly'
-    const { data } = await supabase.from(view).select('*').limit(50)
+    const { data, error } = await supabase.from(view).select('*').limit(50)
+    if (error) console.error('fetchList:', error.message)
     setList(data || [])
     setLoading(false)
-  }
+  }, [tab])
+
+  useEffect(() => { fetchList() }, [fetchList])
 
   const rankIcon = (rank) => {
     if (rank === 1) return <span className="rank-icon gold"><Trophy size={16} /></span>
@@ -35,7 +36,7 @@ export default function LeaderboardPage() {
 
       <div className="tab-group">
         <button className={`tab ${tab === 'total' ? 'active' : ''}`} onClick={() => setTab('total')}>总榜</button>
-        <button className={`tab ${tab === 'monthly' ? 'active' : ''}`} onClick={() => setTab('monthly')}>本月</button>
+        <button className={`tab ${tab === 'monthly' ? 'active' : ''}`} onClick={() => setTab('monthly')}>月榜</button>
       </div>
 
       {loading ? <div className="loading">加载中...</div> : (
@@ -47,12 +48,12 @@ export default function LeaderboardPage() {
                 <div className="lb-rank">{rankIcon(item.rank)}</div>
                 <div className="lb-info">
                   <span className="lb-name">{item.name} {isMe && <span className="me-tag">我</span>}</span>
-                  <span className="lb-meta">{item.grade} 级 · {item.student_id}</span>
+                  <span className="lb-meta">{item.grade}级 // {item.student_id}</span>
                 </div>
                 <div className="lb-score">
                   {tab === 'total'
-                    ? <><span className="score-num">{item.points}</span><span className="score-label">积分</span></>
-                    : <><span className="score-num">{item.monthly_checkins}</span><span className="score-label">次签到</span></>
+                    ? <><span className="score-num">{item.points}</span><span className="score-label">分</span></>
+                    : <><span className="score-num">{item.monthly_checkins}</span><span className="score-label">次</span></>
                   }
                 </div>
               </div>

@@ -1,12 +1,12 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { AuthProvider, useAuth } from './context/AuthContext'
-import { ThemeProvider } from './context/ThemeContext'
 import AuthPage from './pages/AuthPage'
 import SetupProfile from './pages/SetupProfile'
 import Dashboard from './pages/Dashboard'
 import CheckinPage from './pages/CheckinPage'
 import ReservePage from './pages/ReservePage'
 import LeaderboardPage from './pages/LeaderboardPage'
+import ProfilePage from './pages/ProfilePage'
 import NavBar from './components/NavBar'
 
 function AppRoutes() {
@@ -23,6 +23,7 @@ function AppRoutes() {
           <Route path="/checkin" element={<CheckinPage />} />
           <Route path="/reserve" element={<ReservePage />} />
           <Route path="/leaderboard" element={<LeaderboardPage />} />
+          <Route path="/profile" element={<ProfilePage />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </main>
@@ -33,11 +34,9 @@ function AppRoutes() {
 export default function App() {
   return (
     <BrowserRouter basename="/lab304">
-      <ThemeProvider>
-        <AuthProvider>
-          <AppRoutes />
-        </AuthProvider>
-      </ThemeProvider>
+      <AuthProvider>
+        <AppRoutes />
+      </AuthProvider>
     </BrowserRouter>
   )
 }
