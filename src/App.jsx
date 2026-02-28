@@ -2,6 +2,7 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { AuthProvider, useAuth } from './context/AuthContext'
 import { ThemeProvider } from './context/ThemeContext'
 import AuthPage from './pages/AuthPage'
+import ResetPasswordPage from './pages/ResetPasswordPage'
 import SetupProfile from './pages/SetupProfile'
 import Dashboard from './pages/Dashboard'
 import CheckinPage from './pages/CheckinPage'
@@ -11,8 +12,9 @@ import ProfilePage from './pages/ProfilePage'
 import NavBar from './components/NavBar'
 
 function AppRoutes() {
-  const { session, profile } = useAuth()
+  const { session, profile, passwordRecovery } = useAuth()
   if (session === undefined || (session && profile === undefined)) return <div className="loading full">加载中...</div>
+  if (passwordRecovery) return <ResetPasswordPage />
   if (!session) return <AuthPage />
   if (profile === null) return <SetupProfile />
   return (

@@ -6,6 +6,7 @@ const AuthContext = createContext(null)
 export function AuthProvider({ children }) {
   const [session, setSession] = useState(undefined)
   const [profile, setProfile] = useState(undefined)
+  const [passwordRecovery, setPasswordRecovery] = useState(false)
 
   useEffect(() => {
     // Handle PKCE code or token_hash from email confirmation redirect
@@ -24,7 +25,10 @@ export function AuthProvider({ children }) {
     }
 
     // Single source of truth: onAuthStateChange handles all session updates
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_e, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === 'PASSWORD_RECOVERY') {
+        setPasswordRecovery(true)
+      }
       setSession(session)
       if (session) fetchProfile(session.user.id)
       else setProfile(null)
@@ -42,8 +46,10 @@ export function AuthProvider({ children }) {
     setProfile(error ? null : data)
   }
 
+  function clearPasswordRecovery() { setPasswordRecovery(false) }
+
   return (
-    <AuthContext.Provider value={{ session, profile, fetchProfile }}>
+    <AuthContext.Provider value={{ session, profile, fetchProfile, passwordRecovery, clearPasswordRecovery }}>
       {children}
     </AuthContext.Provider>
   )

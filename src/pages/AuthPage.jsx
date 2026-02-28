@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { supabase } from '../lib/supabase'
 import { currentGrades } from '../lib/constants'
-import { Terminal, LogIn, UserPlus } from 'lucide-react'
+import { Terminal, LogIn, UserPlus, KeyRound } from 'lucide-react'
 
 const GRADES = currentGrades()
 const REMEMBER_KEY = 'lab304_remember_email'
@@ -65,8 +65,11 @@ export default function AuthPage() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [registered, setRegistered] = useState(false)
+  const [resetSent, setResetSent] = useState(false)
 
   const set = (k, v) => setForm(f => ({ ...f, [k]: v }))
+
+  function switchMode(m) { setMode(m); setError(''); setResetSent(false) }
 
   async function handleLogin(e) {
     e.preventDefault()
@@ -94,6 +97,18 @@ export default function AuthPage() {
     setLoading(false)
   }
 
+  async function handleForgot(e) {
+    e.preventDefault()
+    if (!form.email.trim()) { setError('请输入邮箱地址'); return }
+    setLoading(true); setError('')
+    const { error } = await supabase.auth.resetPasswordForEmail(form.email, {
+      redirectTo: window.location.origin + import.meta.env.BASE_URL,
+    })
+    if (error) setError(error.message)
+    else setResetSent(true)
+    setLoading(false)
+  }
+
   return (
     <div className="auth-bg">
       <canvas ref={canvasRef} />
@@ -107,57 +122,88 @@ export default function AuthPage() {
           <p>登录 // 预约 // 签到</p>
         </div>
 
-        <div className="tab-group">
-          <button className={`tab ${mode === 'login' ? 'active' : ''}`} onClick={() => { setMode('login'); setError('') }}>
-            <LogIn size={14} /> 登录
-          </button>
-          <button className={`tab ${mode === 'register' ? 'active' : ''}`} onClick={() => { setMode('register'); setError('') }}>
-            <UserPlus size={14} /> 注册
-          </button>
-        </div>
+        {mode !== 'forgot' ? (
+          <div className="tab-group">
+            <button className={`tab ${mode === 'login' ? 'active' : ''}`} onClick={() => switchMode('login')}>
+              <LogIn size={14} /> 登录
+            </button>
+            <button className={`tab ${mode === 'register' ? 'active' : ''}`} onClick={() => switchMode('register')}>
+              <UserPlus size={14} /> 注册
+            </button>
+          </div>
+        ) : (
+          <div className="tab-group">
+            <button className="tab active"><KeyRound size={14} /> 找回密码</button>
+          </div>
+        )}
 
         {registered && (
           <div className="success-msg">注册成功，请查收邮件完成验证。</div>
         )}
 
-        <form onSubmit={mode === 'login' ? handleLogin : handleRegister} className="auth-form">
-          {mode === 'register' && (
-            <>
-              <div className="field-group">
-                <label>学号</label>
-                <input placeholder="请输入学号" value={form.student_id} onChange={e => set('student_id', e.target.value)} required />
-              </div>
-              <div className="field-group">
-                <label>姓名</label>
-                <input placeholder="请输入姓名" value={form.name} onChange={e => set('name', e.target.value)} required />
-              </div>
-              <div className="field-group">
-                <label>年级</label>
-                <select value={form.grade} onChange={e => set('grade', e.target.value)}>
-                  {GRADES.map(g => <option key={g} value={g}>{g}</option>)}
-                </select>
-              </div>
-            </>
-          )}
-          <div className="field-group">
-            <label>邮箱</label>
-            <input type="email" placeholder="请输入邮箱" value={form.email} onChange={e => set('email', e.target.value)} required />
-          </div>
-          <div className="field-group">
-            <label>密码</label>
-            <input type="password" placeholder="请输入密码" value={form.password} onChange={e => set('password', e.target.value)} required />
-          </div>
-          {mode === 'login' && (
-            <div className="remember-row">
-              <input type="checkbox" id="remember" checked={remember} onChange={e => setRemember(e.target.checked)} />
-              <label htmlFor="remember">记住我</label>
+        {resetSent && (
+          <div className="success-msg">重置邮件已发送，请查收邮箱并点击链接设置新密码。</div>
+        )}
+
+        {mode === 'forgot' ? (
+          <form onSubmit={handleForgot} className="auth-form">
+            <div className="field-group">
+              <label>邮箱</label>
+              <input type="email" placeholder="请输入注册邮箱" value={form.email} onChange={e => set('email', e.target.value)} required />
             </div>
-          )}
-          {error && <div className="error-msg">错误: {error}</div>}
-          <button type="submit" className="btn-primary" disabled={loading}>
-            {loading ? '处理中...' : mode === 'login' ? '> 登录' : '> 注册'}
-          </button>
-        </form>
+            {error && <div className="error-msg">错误: {error}</div>}
+            <button type="submit" className="btn-primary" disabled={loading || resetSent}>
+              {loading ? '处理中...' : resetSent ? '已发送' : '> 发送重置邮件'}
+            </button>
+            <button type="button" className="btn-link" onClick={() => switchMode('login')}>
+              返回登录
+            </button>
+          </form>
+        ) : (
+          <form onSubmit={mode === 'login' ? handleLogin : handleRegister} className="auth-form">
+            {mode === 'register' && (
+              <>
+                <div className="field-group">
+                  <label>学号</label>
+                  <input placeholder="请输入学号" value={form.student_id} onChange={e => set('student_id', e.target.value)} required />
+                </div>
+                <div className="field-group">
+                  <label>姓名</label>
+                  <input placeholder="请输入姓名" value={form.name} onChange={e => set('name', e.target.value)} required />
+                </div>
+                <div className="field-group">
+                  <label>年级</label>
+                  <select value={form.grade} onChange={e => set('grade', e.target.value)}>
+                    {GRADES.map(g => <option key={g} value={g}>{g}</option>)}
+                  </select>
+                </div>
+              </>
+            )}
+            <div className="field-group">
+              <label>邮箱</label>
+              <input type="email" placeholder="请输入邮箱" value={form.email} onChange={e => set('email', e.target.value)} required />
+            </div>
+            <div className="field-group">
+              <label>密码</label>
+              <input type="password" placeholder="请输入密码" value={form.password} onChange={e => set('password', e.target.value)} required />
+            </div>
+            {mode === 'login' && (
+              <>
+                <div className="remember-row">
+                  <input type="checkbox" id="remember" checked={remember} onChange={e => setRemember(e.target.checked)} />
+                  <label htmlFor="remember">记住我</label>
+                  <button type="button" className="btn-link" onClick={() => switchMode('forgot')} style={{ marginLeft: 'auto' }}>
+                    忘记密码?
+                  </button>
+                </div>
+              </>
+            )}
+            {error && <div className="error-msg">错误: {error}</div>}
+            <button type="submit" className="btn-primary" disabled={loading}>
+              {loading ? '处理中...' : mode === 'login' ? '> 登录' : '> 注册'}
+            </button>
+          </form>
+        )}
       </div>
     </div>
   )

@@ -369,6 +369,18 @@ body::after {
 .btn-primary:active { transform: scale(0.98); }
 .btn-primary:disabled { opacity: 0.4; cursor: not-allowed; }
 
+.btn-link {
+  background: none; border: none;
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  cursor: pointer;
+  text-decoration: none;
+  transition: color 0.2s;
+  padding: 0;
+}
+.btn-link:hover { color: var(--neon-cyan); }
+
 .icon-btn {
   display: inline-flex; align-items: center;
   padding: 0.35rem; border: none; background: none;
