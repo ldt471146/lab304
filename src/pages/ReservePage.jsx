@@ -1,7 +1,7 @@
 import { useEffect, useState, useCallback } from 'react'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
-import { SLOTS, SLOT_LABEL, getLocalDate } from '../lib/constants'
+import { getLocalDate } from '../lib/constants'
 import ZoneSeatMap from '../components/ZoneSeatMap'
 import { CalendarCheck, Trash2 } from 'lucide-react'
 
@@ -9,38 +9,37 @@ export default function ReservePage() {
   const { profile } = useAuth()
   const [seats, setSeats] = useState([])
   const [myReservations, setMyReservations] = useState([])
-  const [selectedSlot, setSelectedSlot] = useState('morning')
   const [selectedSeat, setSelectedSeat] = useState(null)
   const [reserveDate, setReserveDate] = useState(getLocalDate)
   const [loading, setLoading] = useState(false)
   const [msg, setMsg] = useState(null)
 
-  const fetchSeatsForSlot = useCallback(async () => {
+  const fetchSeats = useCallback(async () => {
     const { data, error } = await supabase.from('seats')
       .select('id, seat_number, zone_row, zone_col, row_label, col_number')
       .eq('is_active', true)
       .order('seat_number')
-    if (error) console.error('fetchSeatsForSlot:', error.message)
+    if (error) console.error('fetchSeats:', error.message)
     const { data: taken, error: tErr } = await supabase.from('reservations')
-      .select('seat_id').eq('reserve_date', reserveDate).eq('time_slot', selectedSlot).eq('status', 'active')
+      .select('seat_id').eq('reserve_date', reserveDate).eq('status', 'active')
     if (tErr) console.error('fetchTaken:', tErr.message)
     const takenIds = new Set((taken || []).map(r => r.seat_id))
     setSeats((data || []).map(s => ({ ...s, taken: takenIds.has(s.id) })))
-  }, [reserveDate, selectedSlot])
+  }, [reserveDate])
 
   const fetchMyReservations = useCallback(async () => {
     if (!profile) return
     const { data, error } = await supabase.from('reservations').select('*, seats(seat_number)')
       .eq('user_id', profile.id).eq('status', 'active').gte('reserve_date', getLocalDate())
-      .order('reserve_date').order('time_slot')
+      .order('reserve_date')
     if (error) console.error('fetchMyReservations:', error.message)
     setMyReservations(data || [])
   }, [profile])
 
   useEffect(() => {
-    fetchSeatsForSlot()
+    fetchSeats()
     fetchMyReservations()
-  }, [fetchSeatsForSlot, fetchMyReservations])
+  }, [fetchSeats, fetchMyReservations])
 
   async function handleReserve() {
     if (!selectedSeat) return
@@ -49,14 +48,14 @@ export default function ReservePage() {
       user_id: profile.id,
       seat_id: selectedSeat,
       reserve_date: reserveDate,
-      time_slot: selectedSlot,
+      time_slot: 'allday',
     })
     if (error) {
       setMsg({ type: 'error', text: error.code === '23505' ? '该座位已被预约' : error.message })
     } else {
       setMsg({ type: 'success', text: '预约成功' })
       setSelectedSeat(null)
-      await Promise.all([fetchSeatsForSlot(), fetchMyReservations()])
+      await Promise.all([fetchSeats(), fetchMyReservations()])
     }
     setLoading(false)
   }
@@ -68,7 +67,7 @@ export default function ReservePage() {
       return
     }
     fetchMyReservations()
-    fetchSeatsForSlot()
+    fetchSeats()
   }
 
   return (
@@ -84,15 +83,6 @@ export default function ReservePage() {
           onChange={e => { setReserveDate(e.target.value); setSelectedSeat(null) }}
           className="date-input"
         />
-        <div className="slot-tabs">
-          {SLOTS.map(s => (
-            <button key={s.key} className={`slot-tab ${selectedSlot === s.key ? 'active' : ''}`}
-              onClick={() => { setSelectedSlot(s.key); setSelectedSeat(null) }}>
-              <span>{s.label}</span>
-              <small>{s.time}</small>
-            </button>
-          ))}
-        </div>
       </div>
 
       <div className="section-title">选择座位</div>
@@ -101,7 +91,7 @@ export default function ReservePage() {
       {selectedSeat && (
         <div className="selected-hint">
           已选: {seats.find(s => s.id === selectedSeat)?.seat_number}
-          {' // '}{reserveDate} {SLOT_LABEL[selectedSlot]}
+          {' // '}{reserveDate}
         </div>
       )}
       {msg && <div className={`msg ${msg.type}`}>{msg.text}</div>}
@@ -117,7 +107,6 @@ export default function ReservePage() {
               <div key={r.id} className="reservation-item">
                 <span className="seat-tag">{r.seats?.seat_number}</span>
                 <span>{r.reserve_date}</span>
-                <span>{SLOT_LABEL[r.time_slot]}</span>
                 <button className="icon-btn danger" onClick={() => handleCancel(r.id)}>
                   <Trash2 size={14} />
                 </button>

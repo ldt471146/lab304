@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
-import { SLOT_LABEL, getLocalDate } from '../lib/constants'
+import { SLOT_TEXT, getLocalDate } from '../lib/constants'
 import { LayoutDashboard, CheckCircle, Clock, Star, Calendar, Download, FileSpreadsheet, CalendarCheck, ClipboardList, Megaphone, Pin, Plus, Pencil, Trash2, X } from 'lucide-react'
 import * as XLSX from 'xlsx'
 
@@ -19,7 +19,7 @@ function buildExportRows(records) {
     '学号': r.student_id ?? '',
     '年级': r.grade ?? '',
     '日期': r.check_date,
-    '时段': SLOT_LABEL[r.time_slot] ?? r.time_slot ?? '',
+    '时段': SLOT_TEXT[r.time_slot] ?? r.time_slot ?? '',
     '座位': r.seat_number ?? '',
     '签到时间': formatDateTime(r.checked_at),
     '签退时间': formatDateTime(r.checked_out_at),
@@ -32,7 +32,7 @@ function buildReserveRows(records) {
     '学号': r.student_id ?? '',
     '年级': r.grade ?? '',
     '日期': r.reserve_date,
-    '时段': SLOT_LABEL[r.time_slot] ?? r.time_slot ?? '',
+    '时段': SLOT_TEXT[r.time_slot] ?? r.time_slot ?? '',
     '座位': r.seat_number ?? '',
     '状态': r.status === 'active' ? '有效' : r.status === 'cancelled' ? '已取消' : r.status,
   }))
@@ -245,7 +245,7 @@ export default function Dashboard() {
 
   if (!profile) return <div className="loading">加载中...</div>
 
-  const checkedSlots = todayCheckins.map(c => SLOT_LABEL[c.time_slot]).filter(Boolean)
+  const hasCheckedIn = todayCheckins.length > 0
 
   return (
     <div className="page">
@@ -277,15 +277,13 @@ export default function Dashboard() {
       </div>
 
       <div className="card-grid">
-        <div className={`status-card ${todayCheckins.length ? 'checked' : 'unchecked'}`}>
-          <span className={`led ${todayCheckins.length ? 'led-green' : 'led-red'}`} />
+        <div className={`status-card ${hasCheckedIn ? 'checked' : 'unchecked'}`}>
+          <span className={`led ${hasCheckedIn ? 'led-green' : 'led-red'}`} />
           <CheckCircle size={24} />
           <div>
             <div className="status-title">今日状态</div>
             <div className="status-sub">
-              {checkedSlots.length
-                ? `已签到 ${checkedSlots.length} 个时段 (${checkedSlots.join(', ')})`
-                : '今日未签到'}
+              {hasCheckedIn ? '已签到' : '今日未签到'}
             </div>
           </div>
         </div>
@@ -379,7 +377,7 @@ export default function Dashboard() {
             {myReservations.map(r => (
               <div key={r.id} className="reservation-item">
                 <Clock size={15} />
-                <span>{SLOT_LABEL[r.time_slot]}</span>
+                <span>{r.reserve_date}</span>
                 <span className="seat-tag">{r.seats?.seat_number}</span>
               </div>
             ))}

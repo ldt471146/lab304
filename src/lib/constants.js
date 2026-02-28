@@ -1,10 +1,17 @@
-export const SLOTS = [
-  { key: 'morning', label: '上午', time: '08:00 - 12:00', start: 8, end: 12 },
-  { key: 'afternoon', label: '下午', time: '14:00 - 18:00', start: 14, end: 18 },
-  { key: 'evening', label: '晚上', time: '19:00 - 22:00', start: 19, end: 22 },
-]
+export const OPEN_HOUR = 6
+export const CLOSE_HOUR = 23
 
-export const SLOT_LABEL = { morning: '上午', afternoon: '下午', evening: '晚上' }
+export function isOpenNow() {
+  const h = new Date().getHours()
+  return h >= OPEN_HOUR && h < CLOSE_HOUR
+}
+
+export const SLOT_TEXT = {
+  allday: '全天',
+  morning: '上午',
+  afternoon: '下午',
+  evening: '晚上',
+}
 
 export const AVATAR_FALLBACK = (seed) => `https://api.dicebear.com/7.x/identicon/svg?seed=${seed}`
 
