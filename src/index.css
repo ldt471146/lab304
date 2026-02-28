@@ -1293,6 +1293,73 @@ body::after {
 }
 .theme-toggle:hover { color: var(--neon-cyan); border-color: var(--neon-cyan); }
 
+/* ===== ADMIN USERS ===== */
+.au-search {
+  position: relative;
+  margin-bottom: 1rem;
+}
+.au-search-icon {
+  position: absolute;
+  left: 0.75rem; top: 50%;
+  transform: translateY(-50%);
+  color: var(--text-muted);
+}
+.au-search input {
+  width: 100%;
+  padding: 0.6rem 0.75rem 0.6rem 2.2rem;
+  background: var(--bg-input);
+  border: 1px solid var(--border-dim);
+  border-radius: var(--radius);
+  color: var(--text);
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+}
+.au-search input:focus {
+  outline: none;
+  border-color: var(--neon-cyan);
+  box-shadow: 0 0 8px rgba(0, 212, 255, 0.15);
+}
+.au-list { display: flex; flex-direction: column; gap: 0.4rem; }
+.au-item {
+  display: flex; align-items: center; gap: 0.85rem;
+  padding: 0.7rem 1rem;
+  background: var(--bg-panel);
+  border: 1px solid var(--border-dim);
+  border-radius: var(--radius);
+  transition: border-color 0.15s;
+}
+.au-item:hover { border-color: var(--border-glow); }
+.au-avatar {
+  width: 32px; height: 32px;
+  border-radius: 50%;
+  border: 1px solid var(--border-dim);
+  flex-shrink: 0;
+}
+.au-info { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+.au-name {
+  font-size: 0.85rem; font-weight: 500;
+  color: var(--text-bright);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.au-meta { font-size: 0.7rem; color: var(--text-muted); margin-top: 0.1rem; }
+.au-stats {
+  display: flex; gap: 0.75rem;
+  flex-shrink: 0;
+}
+.au-stat {
+  display: flex; align-items: center; gap: 0.3rem;
+  font-size: 0.75rem; font-weight: 500;
+  color: var(--neon-cyan);
+  font-variant-numeric: tabular-nums;
+}
+.au-stat:first-child { color: var(--neon-yellow); }
+.au-date {
+  font-size: 0.68rem;
+  color: var(--text-muted);
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+
 /* ===== MOBILE RESPONSIVE ===== */
 @media (max-width: 768px) {
   /* Navbar → bottom tab bar */
@@ -1401,6 +1468,13 @@ body::after {
 
   /* Checked-out banner */
   .checked-out-banner { padding: 0.85rem 1rem; gap: 0.75rem; }
+
+  /* Admin users */
+  .au-item { gap: 0.6rem; padding: 0.6rem 0.75rem; }
+  .au-avatar { width: 28px; height: 28px; }
+  .au-stats { flex-direction: column; gap: 0.15rem; }
+  .au-stat { font-size: 0.7rem; }
+  .au-date { display: none; }
 }
 
 @media (max-width: 380px) {
