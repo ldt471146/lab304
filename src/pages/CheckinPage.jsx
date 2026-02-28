@@ -152,19 +152,20 @@ export default function CheckinPage() {
       )}
 
       {finishedCheckins.length > 0 && (
-        <div className="finished-checkins">
-          {finishedCheckins.map(c => (
-            <div key={c.id} className="checked-out-banner">
-              <CheckCheck size={18} />
-              <div>
-                <div>已完成</div>
-                <div className="sub">
-                  {c.seats?.seat_number && `${c.seats.seat_number} // `}
-                  {formatTime(c.checked_at)} {'>'} {formatTime(c.checked_out_at)}
-                </div>
+        <div className="finished-checkins-compact">
+          <div className="finished-header">
+            <CheckCheck size={14} />
+            <span>今日记录 ({finishedCheckins.length})</span>
+          </div>
+          {finishedCheckins.map(c => {
+            const mins = Math.floor(Math.max(0, (new Date(c.checked_out_at) - new Date(c.checked_at)) / 60000))
+            return (
+              <div key={c.id} className="finished-row">
+                <span className="finished-time">{formatTime(c.checked_at)} → {formatTime(c.checked_out_at)}</span>
+                <span className="finished-dur">{formatMinutes(mins)}</span>
               </div>
-            </div>
-          ))}
+            )
+          })}
         </div>
       )}
 

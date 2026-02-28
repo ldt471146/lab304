@@ -586,6 +586,29 @@ body::after {
 .finished-checkins { display: flex; flex-direction: column; gap: 0.5rem; }
 .finished-checkins .checked-out-banner { margin-bottom: 0; }
 
+.finished-checkins-compact {
+  background: rgba(84, 106, 123, 0.05);
+  border: 1px solid rgba(84, 106, 123, 0.12);
+  border-radius: var(--radius-lg);
+  padding: 0.6rem 0.9rem;
+  margin-bottom: 1rem;
+}
+.finished-header {
+  display: flex; align-items: center; gap: 0.4rem;
+  font-size: 0.78rem; color: var(--text-muted);
+  margin-bottom: 0.4rem;
+}
+.finished-row {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 0.25rem 0;
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  border-top: 1px solid rgba(84, 106, 123, 0.08);
+}
+.finished-row:first-of-type { border-top: none; }
+.finished-time { font-family: var(--font-mono, monospace); }
+.finished-dur { color: var(--neon-green); font-size: 0.75rem; }
+
 /* --- Success Banner --- */
 .success-banner {
   display: flex; align-items: center; gap: 1rem;
