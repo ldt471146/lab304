@@ -1,9 +1,10 @@
-import { useEffect, useState, useMemo } from 'react'
+import { useEffect, useState, useMemo, useRef } from 'react'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
 import { getLocalDate } from '../lib/constants'
 import { generateSchedule, computeStats } from '../lib/dutyScheduler'
-import { CalendarClock, ChevronLeft, ChevronRight, UserPlus, Trash2, Wand2, BarChart3 } from 'lucide-react'
+import DatePicker from '../components/DatePicker'
+import { CalendarClock, ChevronLeft, ChevronRight, UserPlus, Trash2, Wand2, BarChart3, X, Plus } from 'lucide-react'
 
 const WEEKDAYS = ['日', '一', '二', '三', '四', '五', '六']
 
@@ -17,7 +18,6 @@ export default function DutyPage() {
   const { profile } = useAuth()
   const today = getLocalDate()
 
-  // calendar state
   const [viewYear, setViewYear] = useState(() => new Date().getFullYear())
   const [viewMonth, setViewMonth] = useState(() => new Date().getMonth())
   const [scheduleMap, setScheduleMap] = useState({})
@@ -36,7 +36,22 @@ export default function DutyPage() {
   const [stats, setStats] = useState(null)
   const [msg, setMsg] = useState(null)
 
+  // manual assign popover
+  const [activeDay, setActiveDay] = useState(null)
+  const [popoverAddId, setPopoverAddId] = useState('')
+  const popoverRef = useRef(null)
+
   useEffect(() => { fetchSchedule(); fetchMembers() }, [])
+
+  // close popover on outside click
+  useEffect(() => {
+    if (!activeDay) return
+    function handleClick(e) {
+      if (popoverRef.current && !popoverRef.current.contains(e.target)) setActiveDay(null)
+    }
+    document.addEventListener('mousedown', handleClick)
+    return () => document.removeEventListener('mousedown', handleClick)
+  }, [activeDay])
 
   async function fetchSchedule() {
     const { data } = await supabase
@@ -82,13 +97,11 @@ export default function DutyPage() {
       setMsg({ type: 'error', text: '请设置日期范围并添加值日成员' }); return
     }
     setGenerating(true); setMsg(null); setStats(null)
-
     const members = dutyMembers.map(m => ({
       userId: m.user_id, name: m.users.name, startDate: m.start_date, endDate: m.end_date,
     }))
     const schedule = generateSchedule({ members, rangeStart, rangeEnd, minPerDay, maxPerDay })
 
-    // delete old then insert
     await supabase.from('duty_schedule').delete()
       .gte('duty_date', rangeStart).lte('duty_date', rangeEnd)
 
@@ -100,27 +113,39 @@ export default function DutyPage() {
       const { error } = await supabase.from('duty_schedule').insert(rows)
       if (error) { setMsg({ type: 'error', text: error.message }); setGenerating(false); return }
     }
-
     setStats(computeStats(schedule, members))
     setMsg({ type: 'success', text: `已生成 ${schedule.length} 天排班 (${rows.length} 条记录)` })
     setGenerating(false)
     fetchSchedule()
   }
 
-  // calendar rendering
+  // manual assign helpers
+  async function manualAdd(date, userId) {
+    const { error } = await supabase.from('duty_schedule').insert({
+      duty_date: date, user_id: userId, created_by: profile.id,
+    })
+    if (error) { setMsg({ type: 'error', text: error.message }); return }
+    setPopoverAddId('')
+    fetchSchedule()
+  }
+
+  async function manualRemove(date, userId) {
+    await supabase.from('duty_schedule').delete()
+      .eq('duty_date', date).eq('user_id', userId)
+    fetchSchedule()
+  }
+
+  // calendar
   const { daysInMonth, startDow } = useMemo(() => monthRange(viewYear, viewMonth), [viewYear, viewMonth])
 
   const calendarCells = useMemo(() => {
     const cells = []
-    // previous month padding
     const prevLast = new Date(viewYear, viewMonth, 0).getDate()
     for (let i = startDow - 1; i >= 0; i--) cells.push({ day: prevLast - i, otherMonth: true, date: null })
-    // current month
     for (let d = 1; d <= daysInMonth; d++) {
       const date = `${viewYear}-${String(viewMonth + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`
       cells.push({ day: d, otherMonth: false, date })
     }
-    // next month padding
     const remain = 7 - (cells.length % 7)
     if (remain < 7) for (let d = 1; d <= remain; d++) cells.push({ day: d, otherMonth: true, date: null })
     return cells
@@ -135,8 +160,18 @@ export default function DutyPage() {
     else setViewMonth(m => m + 1)
   }
 
+  function handleDayClick(date) {
+    if (!isAdmin || !date) return
+    setActiveDay(prev => prev === date ? null : date)
+    setPopoverAddId('')
+  }
+
   const isAdmin = profile?.is_admin
   const availableUsers = allUsers.filter(u => !dutyMembers.some(m => m.user_id === u.id))
+
+  // popover: members not yet assigned to activeDay
+  const activeDayEntries = activeDay ? (scheduleMap[activeDay] || []) : []
+  const activeDayAvailable = allUsers.filter(u => !activeDayEntries.some(e => e.userId === u.id))
 
   return (
     <div className="page">
@@ -158,13 +193,18 @@ export default function DutyPage() {
             const entries = cell.date ? (scheduleMap[cell.date] || []) : []
             const isToday = cell.date === today
             const isMine = entries.some(e => e.userId === profile?.id)
+            const isActive = cell.date === activeDay
             const cls = ['duty-day',
               cell.otherMonth && 'other-month',
               isToday && 'today',
               isMine && 'mine',
+              isAdmin && !cell.otherMonth && 'clickable',
+              isActive && 'active',
             ].filter(Boolean).join(' ')
             return (
-              <div key={i} className={cls}>
+              <div key={i} className={cls} style={{ position: 'relative' }}
+                onClick={() => handleDayClick(cell.date)}
+              >
                 <span className="duty-day-num">{cell.day}</span>
                 {entries.length > 0 && (
                   <div className="duty-names">
@@ -173,10 +213,48 @@ export default function DutyPage() {
                     ))}
                   </div>
                 )}
+
+                {/* Admin popover */}
+                {isActive && isAdmin && (
+                  <div className="duty-day-popover" ref={popoverRef} onClick={e => e.stopPropagation()}>
+                    <div className="duty-popover-title">
+                      {activeDay} 值日
+                      <button className="btn-icon" onClick={() => setActiveDay(null)}><X size={12} /></button>
+                    </div>
+                    {activeDayEntries.length > 0 ? (
+                      <div className="duty-popover-list">
+                        {activeDayEntries.map(e => (
+                          <div key={e.userId} className="duty-popover-item">
+                            <span>{e.name}</span>
+                            <button className="btn-danger-sm" onClick={() => manualRemove(activeDay, e.userId)}>
+                              <X size={11} />
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="duty-popover-empty">无人值日</div>
+                    )}
+                    <div className="duty-popover-add">
+                      <select className="date-input" value={popoverAddId} onChange={e => setPopoverAddId(e.target.value)}>
+                        <option value="">添加成员...</option>
+                        {activeDayAvailable.map(u => (
+                          <option key={u.id} value={u.id}>{u.name}</option>
+                        ))}
+                      </select>
+                      <button className="btn-primary btn-sm" disabled={!popoverAddId}
+                        onClick={() => popoverAddId && manualAdd(activeDay, popoverAddId)}
+                      >
+                        <Plus size={12} />
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
             )
           })}
         </div>
+        {isAdmin && <div className="duty-cal-hint">点击日期格子可手动指派值日</div>}
       </div>
 
       {/* Admin section */}
@@ -189,8 +267,8 @@ export default function DutyPage() {
               <option value="">选择成员...</option>
               {availableUsers.map(u => <option key={u.id} value={u.id}>{u.name} ({u.student_id})</option>)}
             </select>
-            <input type="date" className="date-input" value={memberStart} onChange={e => setMemberStart(e.target.value)} placeholder="开始" />
-            <input type="date" className="date-input" value={memberEnd} onChange={e => setMemberEnd(e.target.value)} placeholder="结束" />
+            <DatePicker value={memberStart} onChange={setMemberStart} placeholder="开始日期" />
+            <DatePicker value={memberEnd} onChange={setMemberEnd} placeholder="结束日期" />
             <button className="btn-primary" onClick={addMember}><UserPlus size={14} /> 添加</button>
           </div>
 
@@ -206,15 +284,15 @@ export default function DutyPage() {
             </div>
           )}
 
-          <div className="section-title" style={{ marginTop: '1.5rem' }}><Wand2 size={16} /> 生成排班</div>
+          <div className="section-title" style={{ marginTop: '1.5rem' }}><Wand2 size={16} /> 算法生成排班</div>
           <div className="duty-gen-row">
             <div className="field-group">
               <label>排班开始</label>
-              <input type="date" className="date-input" value={rangeStart} onChange={e => setRangeStart(e.target.value)} />
+              <DatePicker value={rangeStart} onChange={setRangeStart} placeholder="开始日期" />
             </div>
             <div className="field-group">
               <label>排班结束</label>
-              <input type="date" className="date-input" value={rangeEnd} onChange={e => setRangeEnd(e.target.value)} />
+              <DatePicker value={rangeEnd} onChange={setRangeEnd} placeholder="结束日期" />
             </div>
             <div className="field-group">
               <label>每日最少</label>
