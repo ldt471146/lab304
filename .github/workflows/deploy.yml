@@ -41,30 +41,6 @@ jobs:
         with:
           name: dist
           path: dist
-      - name: Setup Nginx & deploy files
-        uses: appleboy/ssh-action@v1
-        with:
-          host: ${{ secrets.SSH_HOST }}
-          username: ${{ secrets.SSH_USER }}
-          password: ${{ secrets.SSH_PASSWORD }}
-          script: |
-            mkdir -p /var/www/lab304
-            # Write nginx config if not exists
-            if [ ! -f /etc/nginx/conf.d/lab304.conf ]; then
-              cat > /etc/nginx/conf.d/lab304.conf << 'NGINX'
-            server {
-                listen 80;
-                server_name _;
-
-                location /lab304/ {
-                    alias /var/www/lab304/;
-                    index index.html;
-                    try_files $uri $uri/ /lab304/index.html;
-                }
-            }
-            NGINX
-              nginx -t && systemctl reload nginx
-            fi
       - name: Deploy dist to server
         uses: appleboy/scp-action@v1
         with:
@@ -72,16 +48,10 @@ jobs:
           username: ${{ secrets.SSH_USER }}
           password: ${{ secrets.SSH_PASSWORD }}
           source: "dist/*"
-          target: /var/www/lab304
+          target: /var/www/html/lab304
           strip_components: 1
           overwrite: true
-      - name: Reload Nginx
-        uses: appleboy/ssh-action@v1
-        with:
-          host: ${{ secrets.SSH_HOST }}
-          username: ${{ secrets.SSH_USER }}
-          password: ${{ secrets.SSH_PASSWORD }}
-          script: nginx -t && systemctl reload nginx
+          rm: true
 
   deploy-pages:
     needs: build
