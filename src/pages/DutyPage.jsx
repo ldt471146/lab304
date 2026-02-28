@@ -79,9 +79,9 @@ export default function DutyPage() {
     if (!selectedUserId || !memberStart || !memberEnd) {
       setMsg({ type: 'error', text: '请选择成员并填写在岗日期' }); return
     }
-    const { error } = await supabase.from('duty_members').insert({
-      user_id: selectedUserId, start_date: memberStart, end_date: memberEnd,
-    })
+    const { error } = await supabase.from('duty_members').upsert({
+      user_id: selectedUserId, start_date: memberStart, end_date: memberEnd, is_active: true,
+    }, { onConflict: 'user_id' })
     if (error) { setMsg({ type: 'error', text: error.message }); return }
     setSelectedUserId(''); setMsg(null)
     fetchMembers()
