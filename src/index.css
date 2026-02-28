@@ -1499,6 +1499,40 @@ body::after {
 }
 
 /* ===== DUTY CALENDAR ===== */
+
+/* Toast notification */
+.duty-toast {
+  position: fixed; top: 1rem; right: 1rem; z-index: 300;
+  display: flex; align-items: center; gap: 0.5rem;
+  padding: 0.6rem 1rem; border-radius: var(--radius-lg);
+  font-size: 0.78rem; font-family: var(--font-mono);
+  animation: toast-in 0.25s ease-out;
+  pointer-events: none;
+}
+.duty-toast.success {
+  background: rgba(0,255,65,0.12); border: 1px solid rgba(0,255,65,0.4);
+  color: var(--neon-green);
+}
+.duty-toast.error {
+  background: rgba(255,0,64,0.12); border: 1px solid rgba(255,0,64,0.4);
+  color: var(--neon-red);
+}
+@keyframes toast-in {
+  from { opacity: 0; transform: translateY(-10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Preset buttons */
+.duty-preset-row { display: flex; gap: 0.4rem; margin-bottom: 0.75rem; }
+.btn-preset {
+  padding: 0.35rem 0.7rem; font-size: 0.7rem;
+  background: var(--bg-panel); border: 1px solid var(--border-dim);
+  border-radius: var(--radius); color: var(--text);
+  font-family: var(--font-mono); cursor: pointer;
+  transition: all 0.2s;
+}
+.btn-preset:hover { border-color: var(--neon-cyan); color: var(--neon-cyan); }
+
 .duty-calendar {
   background: var(--bg-card);
   border: 1px solid var(--border-glow);
