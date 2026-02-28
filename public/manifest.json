@@ -1,0 +1,19 @@
+{
+  "name": "LAB 304 签到系统",
+  "short_name": "LAB304",
+  "description": "实验室座位管理 · 签到 · 预约 · 排行榜",
+  "start_url": "/lab304/",
+  "scope": "/lab304/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "theme_color": "#0a0e17",
+  "background_color": "#0a0e17",
+  "icons": [
+    {
+      "src": "icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
