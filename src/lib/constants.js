@@ -17,6 +17,12 @@ export const AVATAR_FALLBACK = (seed) => `https://api.dicebear.com/7.x/identicon
 
 export const getLocalDate = () => new Date().toLocaleDateString('sv-SE')
 
+export function formatMinutes(m) {
+  if (m == null || m <= 0) return '0 分钟'
+  if (m < 60) return `${m} 分钟`
+  return `${(m / 60).toFixed(1)} 小时`
+}
+
 export function currentGrades() {
   const y = new Date().getFullYear()
   return Array.from({ length: 5 }, (_, i) => String(y - i))

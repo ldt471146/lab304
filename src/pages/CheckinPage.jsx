@@ -1,7 +1,7 @@
 import { useEffect, useState, useCallback } from 'react'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
-import { isOpenNow, OPEN_HOUR, CLOSE_HOUR, getLocalDate } from '../lib/constants'
+import { isOpenNow, OPEN_HOUR, CLOSE_HOUR, getLocalDate, formatMinutes } from '../lib/constants'
 import ZoneSeatMap from '../components/ZoneSeatMap'
 import { CheckCheck, MapPin, LogOut, Clock, Timer } from 'lucide-react'
 
@@ -17,7 +17,7 @@ function formatDuration(ms) {
 export default function CheckinPage() {
   const { profile, fetchProfile } = useAuth()
   const [seats, setSeats] = useState([])
-  const [todayCheckin, setTodayCheckin] = useState(null)
+  const [todayCheckins, setTodayCheckins] = useState([])
   const [selectedSeat, setSelectedSeat] = useState(null)
   const [loading, setLoading] = useState(false)
   const [checkoutLoading, setCheckoutLoading] = useState(false)
@@ -27,35 +27,50 @@ export default function CheckinPage() {
   const today = getLocalDate()
   const open = isOpenNow()
 
+  const activeCheckin = todayCheckins.find(c => !c.checked_out_at) || null
+  const finishedCheckins = todayCheckins.filter(c => c.checked_out_at)
+  const canCheckin = open && !activeCheckin
+
   const fetchSeats = useCallback(async () => {
     const { data, error } = await supabase.from('seat_status_today').select('*').order('seat_number')
     if (error) console.error('fetchSeats:', error.message)
     setSeats(data || [])
   }, [])
 
-  const fetchTodayCheckin = useCallback(async () => {
+  const fetchTodayCheckins = useCallback(async () => {
     if (!profile) return
     const { data, error } = await supabase.from('checkins').select('*, seats(seat_number)')
-      .eq('user_id', profile.id).eq('check_date', today).maybeSingle()
-    if (error) console.error('fetchTodayCheckin:', error.message)
-    setTodayCheckin(data || null)
+      .eq('user_id', profile.id).eq('check_date', today).order('checked_at', { ascending: false })
+    if (error) console.error('fetchTodayCheckins:', error.message)
+    setTodayCheckins(data || [])
   }, [profile, today])
 
   useEffect(() => {
     fetchSeats()
-    fetchTodayCheckin()
-  }, [fetchSeats, fetchTodayCheckin])
+    fetchTodayCheckins()
+  }, [fetchSeats, fetchTodayCheckins])
 
   useEffect(() => {
-    if (!todayCheckin || todayCheckin.checked_out_at) return
+    if (!activeCheckin) { setElapsed(''); return }
     const tick = () => {
-      const diff = Date.now() - new Date(todayCheckin.checked_at).getTime()
+      const diff = Date.now() - new Date(activeCheckin.checked_at).getTime()
       setElapsed(formatDuration(diff))
     }
     tick()
     const id = setInterval(tick, 1000)
     return () => clearInterval(id)
-  }, [todayCheckin])
+  }, [activeCheckin])
+
+  const todayTotalMinutes = (() => {
+    let sum = 0
+    for (const c of finishedCheckins) {
+      sum += Math.max(0, (new Date(c.checked_out_at) - new Date(c.checked_at)) / 60000)
+    }
+    if (activeCheckin) {
+      sum += Math.max(0, (Date.now() - new Date(activeCheckin.checked_at).getTime()) / 60000)
+    }
+    return Math.floor(sum)
+  })()
 
   async function handleCheckin() {
     if (!profile || !open) return
@@ -64,24 +79,25 @@ export default function CheckinPage() {
     if (selectedSeat) payload.seat_id = selectedSeat
     const { error } = await supabase.from('checkins').insert(payload)
     if (error) {
-      setMsg({ type: 'error', text: error.code === '23505' ? '今日已签到' : error.message })
+      setMsg({ type: 'error', text: error.message })
     } else {
-      setMsg({ type: 'success', text: '签到成功 // +1 积分' })
-      await Promise.all([fetchTodayCheckin(), fetchSeats(), fetchProfile(profile.id)])
+      const isFirst = todayCheckins.length === 0
+      setMsg({ type: 'success', text: isFirst ? '签到成功 // +1 积分' : '签到成功' })
+      await Promise.all([fetchTodayCheckins(), fetchSeats(), fetchProfile(profile.id)])
       setSelectedSeat(null)
     }
     setLoading(false)
   }
 
   async function handleCheckout() {
-    if (!todayCheckin) return
+    if (!activeCheckin) return
     setCheckoutLoading(true); setMsg(null)
-    const { error } = await supabase.rpc('checkout_checkin', { p_checkin_id: todayCheckin.id })
+    const { error } = await supabase.rpc('checkout_checkin', { p_checkin_id: activeCheckin.id })
     if (error) {
       setMsg({ type: 'error', text: error.message })
     } else {
       setMsg({ type: 'success', text: '签退成功' })
-      await Promise.all([fetchTodayCheckin(), fetchSeats()])
+      await Promise.all([fetchTodayCheckins(), fetchSeats(), fetchProfile(profile.id)])
     }
     setCheckoutLoading(false)
   }
@@ -97,8 +113,6 @@ export default function CheckinPage() {
   }))
 
   const formatTime = (iso) => iso ? new Date(iso).toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' }) : '--'
-  const alreadyChecked = !!todayCheckin
-  const canCheckin = open && !todayCheckin
 
   return (
     <div className="page">
@@ -110,16 +124,23 @@ export default function CheckinPage() {
 
       {msg && <div className={`msg ${msg.type}`}>{msg.text}</div>}
 
-      {alreadyChecked && !todayCheckin.checked_out_at && (
+      {todayCheckins.length > 0 && (
+        <div className="today-study-summary">
+          <Clock size={16} />
+          <span>今日学习: {formatMinutes(todayTotalMinutes)}</span>
+        </div>
+      )}
+
+      {activeCheckin && (
         <div className="checkout-card">
           <div className="checkout-card-info">
             <div className="checkout-card-title">
               <Timer size={18} />
-              <span>签到中</span>
+              <span>学习中</span>
             </div>
             <div className="checkout-card-meta">
-              {todayCheckin.seats?.seat_number && `座位 ${todayCheckin.seats.seat_number} // `}
-              签到 {formatTime(todayCheckin.checked_at)}
+              {activeCheckin.seats?.seat_number && `座位 ${activeCheckin.seats.seat_number} // `}
+              签到 {formatTime(activeCheckin.checked_at)}
             </div>
             <div className="checkout-timer">{elapsed}</div>
           </div>
@@ -130,16 +151,20 @@ export default function CheckinPage() {
         </div>
       )}
 
-      {alreadyChecked && todayCheckin.checked_out_at && (
-        <div className="checked-out-banner">
-          <CheckCheck size={18} />
-          <div>
-            <div>今日已完成</div>
-            <div className="sub">
-              {todayCheckin.seats?.seat_number && `${todayCheckin.seats.seat_number} // `}
-              {formatTime(todayCheckin.checked_at)} {'>'} {formatTime(todayCheckin.checked_out_at)}
+      {finishedCheckins.length > 0 && (
+        <div className="finished-checkins">
+          {finishedCheckins.map(c => (
+            <div key={c.id} className="checked-out-banner">
+              <CheckCheck size={18} />
+              <div>
+                <div>已完成</div>
+                <div className="sub">
+                  {c.seats?.seat_number && `${c.seats.seat_number} // `}
+                  {formatTime(c.checked_at)} {'>'} {formatTime(c.checked_out_at)}
+                </div>
+              </div>
             </div>
-          </div>
+          ))}
         </div>
       )}
 

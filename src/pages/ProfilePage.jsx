@@ -1,7 +1,7 @@
 import { useState, useRef } from 'react'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
-import { AVATAR_FALLBACK } from '../lib/constants'
+import { AVATAR_FALLBACK, formatMinutes } from '../lib/constants'
 import { User, Upload, Loader2, Save } from 'lucide-react'
 
 export default function ProfilePage() {
@@ -76,8 +76,8 @@ export default function ProfilePage() {
         {msg && <div className={`msg ${msg.type}`}>{msg.text}</div>}
         <div className="profile-stats">
           <div className="profile-stat">
-            <div className="profile-stat-num">{profile.checkin_count ?? 0}</div>
-            <div className="profile-stat-label">签到</div>
+            <div className="profile-stat-num">{formatMinutes(profile.total_minutes ?? 0)}</div>
+            <div className="profile-stat-label">学习</div>
           </div>
           <div className="profile-stat">
             <div className="profile-stat-num">{profile.points ?? 0}</div>

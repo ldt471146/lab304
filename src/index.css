@@ -573,6 +573,19 @@ body::after {
 }
 .checked-out-banner .sub { font-size: 0.75rem; color: var(--text-muted); margin-top: 0.15rem; }
 
+.today-study-summary {
+  display: flex; align-items: center; gap: 0.5rem;
+  padding: 0.6rem 1rem;
+  background: rgba(0, 255, 136, 0.05);
+  border: 1px solid rgba(0, 255, 136, 0.15);
+  border-radius: var(--radius-lg);
+  color: var(--neon-green);
+  font-size: 0.85rem;
+  margin-bottom: 1rem;
+}
+.finished-checkins { display: flex; flex-direction: column; gap: 0.5rem; }
+.finished-checkins .checked-out-banner { margin-bottom: 0; }
+
 /* --- Success Banner --- */
 .success-banner {
   display: flex; align-items: center; gap: 1rem;

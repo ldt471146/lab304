@@ -1,6 +1,7 @@
 import { useEffect, useState, useCallback } from 'react'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
+import { formatMinutes } from '../lib/constants'
 import { Trophy, Medal } from 'lucide-react'
 
 export default function LeaderboardPage() {
@@ -52,8 +53,8 @@ export default function LeaderboardPage() {
                 </div>
                 <div className="lb-score">
                   {tab === 'total'
-                    ? <><span className="score-num">{item.points}</span><span className="score-label">分</span></>
-                    : <><span className="score-num">{item.monthly_checkins}</span><span className="score-label">次</span></>
+                    ? <><span className="score-num">{formatMinutes(item.total_minutes)}</span></>
+                    : <><span className="score-num">{formatMinutes(item.monthly_minutes)}</span></>
                   }
                 </div>
               </div>

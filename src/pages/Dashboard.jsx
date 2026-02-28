@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
-import { SLOT_TEXT, getLocalDate } from '../lib/constants'
+import { SLOT_TEXT, getLocalDate, formatMinutes } from '../lib/constants'
 import { LayoutDashboard, CheckCircle, Clock, Star, Calendar, Download, FileSpreadsheet, CalendarCheck, ClipboardList, Megaphone, Pin, Plus, Pencil, Trash2, X } from 'lucide-react'
 import * as XLSX from 'xlsx'
 
@@ -80,6 +80,7 @@ export default function Dashboard() {
   const [annLoading, setAnnLoading] = useState(false)
   const [showAnnModal, setShowAnnModal] = useState(false)
   const [dutyToday, setDutyToday] = useState([])
+  const [showDutyModal, setShowDutyModal] = useState(false)
 
   useEffect(() => {
     if (!profile) return
@@ -116,7 +117,12 @@ export default function Dashboard() {
       .from('duty_schedule')
       .select('user_id, users!inner(name)')
       .eq('duty_date', getLocalDate())
-    setDutyToday(data || [])
+    const list = data || []
+    setDutyToday(list)
+    if (profile && list.some(d => d.user_id === profile.id)) {
+      const ackKey = `lab304_duty_ack_${profile.id}_${getLocalDate()}`
+      if (!localStorage.getItem(ackKey)) setShowDutyModal(true)
+    }
   }
 
   async function fetchAnnouncements() {
@@ -262,8 +268,8 @@ export default function Dashboard() {
         </div>
         <div className="hero-stats">
           <div className="stat">
-            <span className="stat-num">{profile.checkin_count}</span>
-            <span className="stat-label">签到</span>
+            <span className="stat-num">{formatMinutes(profile.total_minutes ?? 0)}</span>
+            <span className="stat-label">学习</span>
           </div>
           <div className="stat">
             <span className="stat-num">{profile.points}</span>
@@ -283,7 +289,9 @@ export default function Dashboard() {
           <div>
             <div className="status-title">今日状态</div>
             <div className="status-sub">
-              {hasCheckedIn ? '已签到' : '今日未签到'}
+              {hasCheckedIn
+                ? todayCheckins.some(c => !c.checked_out_at) ? '学习中' : `已学习 ${formatMinutes(todayCheckins.reduce((sum, c) => sum + (c.checked_out_at ? Math.max(0, (new Date(c.checked_out_at) - new Date(c.checked_at)) / 60000) : 0), 0) | 0)}`
+                : '未签到'}
             </div>
           </div>
         </div>
@@ -446,6 +454,22 @@ export default function Dashboard() {
               ))}
             </div>
             <button className="btn-ann-ack" onClick={handleAckAnn}>已收到</button>
+          </div>
+        </div>
+      )}
+      {showDutyModal && (
+        <div className="ann-modal-overlay" onClick={() => {}}>
+          <div className="ann-modal" onClick={e => e.stopPropagation()}>
+            <div className="ann-modal-title"><ClipboardList size={18} /> 值日提醒</div>
+            <div className="ann-modal-list">
+              <div style={{ textAlign: 'center', fontSize: '1.1rem', padding: '1.5rem 0' }}>
+                今天你值日呦！
+              </div>
+            </div>
+            <button className="btn-ann-ack" onClick={() => {
+              localStorage.setItem(`lab304_duty_ack_${profile.id}_${getLocalDate()}`, '1')
+              setShowDutyModal(false)
+            }}>收到</button>
           </div>
         </div>
       )}
