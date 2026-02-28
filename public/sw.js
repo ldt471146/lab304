@@ -1,4 +1,4 @@
-const CACHE_NAME = 'lab304-v1'
+const CACHE_NAME = 'lab304-v2'
 const PRECACHE = [
   '/lab304/',
   '/lab304/index.html',
@@ -22,7 +22,6 @@ self.addEventListener('activate', (e) => {
 
 self.addEventListener('fetch', (e) => {
   if (e.request.method !== 'GET') return
-  // Network-first for API calls, cache-first for assets
   if (e.request.url.includes('supabase.co')) return
   e.respondWith(
     fetch(e.request)
@@ -33,4 +32,9 @@ self.addEventListener('fetch', (e) => {
       })
       .catch(() => caches.match(e.request).then((r) => r || caches.match('/lab304/index.html')))
   )
+})
+
+// Notify clients when a new version is ready
+self.addEventListener('message', (e) => {
+  if (e.data === 'SKIP_WAITING') self.skipWaiting()
 })

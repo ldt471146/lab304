@@ -12,6 +12,7 @@ import DutyPage from './pages/DutyPage'
 import ProfilePage from './pages/ProfilePage'
 import AdminUsersPage from './pages/AdminUsersPage'
 import NavBar from './components/NavBar'
+import UpdatePrompt from './components/UpdatePrompt'
 
 function AppRoutes() {
   const { session, profile, passwordRecovery } = useAuth()
@@ -43,6 +44,7 @@ export default function App() {
     <ThemeProvider>
       <BrowserRouter basename="/lab304">
         <AuthProvider>
+          <UpdatePrompt />
           <AppRoutes />
         </AuthProvider>
       </BrowserRouter>

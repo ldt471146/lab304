@@ -1293,6 +1293,23 @@ body::after {
 }
 .theme-toggle:hover { color: var(--neon-cyan); border-color: var(--neon-cyan); }
 
+/* ===== UPDATE PROMPT ===== */
+.update-banner {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 9000;
+  display: flex; align-items: center; justify-content: center; gap: 0.5rem;
+  padding: 0.6rem;
+  background: rgba(0, 212, 255, 0.12);
+  border-bottom: 1px solid var(--neon-cyan);
+  color: var(--neon-cyan);
+  font-size: 0.8rem; font-family: var(--font-mono);
+  cursor: pointer;
+  backdrop-filter: blur(8px);
+  animation: fadeSlideIn 0.3s ease;
+}
+.update-banner:hover { background: rgba(0, 212, 255, 0.2); }
+.update-spin { animation: spin 2s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
 /* ===== ADMIN USERS ===== */
 .au-search {
   position: relative;
