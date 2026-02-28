@@ -5,7 +5,7 @@ import { AVATAR_FALLBACK, formatMinutes } from '../lib/constants'
 import { User, Upload, Loader2, Save } from 'lucide-react'
 
 export default function ProfilePage() {
-  const { profile, fetchProfile } = useAuth()
+  const { session, profile, fetchProfile } = useAuth()
   const fileRef = useRef(null)
   const [uploading, setUploading] = useState(false)
   const [editName, setEditName] = useState(null)
@@ -113,7 +113,7 @@ export default function ProfilePage() {
           </div>
           <div className="profile-field">
             <span className="profile-field-label">邮箱</span>
-            <span className="profile-field-value">{profile.email || '--'}</span>
+            <span className="profile-field-value">{profile.email || session?.user?.email || '--'}</span>
           </div>
         </div>
       </div>

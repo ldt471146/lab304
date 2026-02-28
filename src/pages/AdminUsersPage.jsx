@@ -21,7 +21,7 @@ export default function AdminUsersPage() {
     if (!profile?.is_admin) return
     supabase
       .from('users')
-      .select('name, student_id, grade, points, total_minutes, created_at, avatar_url')
+      .select('name, student_id, grade, points, total_minutes, created_at, avatar_url, email')
       .order('created_at', { ascending: false })
       .then(({ data }) => { setUsers(data || []); setLoading(false) })
   }, [profile])
@@ -61,7 +61,7 @@ export default function AdminUsersPage() {
               />
               <div className="au-info">
                 <span className="au-name">{u.name}</span>
-                <span className="au-meta">{u.grade}级 // {u.student_id}</span>
+                <span className="au-meta">{u.grade}级 // {u.student_id} // {u.email || '--'}</span>
               </div>
               <div className="au-stats">
                 <span className="au-stat">
