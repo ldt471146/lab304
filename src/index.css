@@ -1359,6 +1359,66 @@ body::after {
   flex-shrink: 0;
   white-space: nowrap;
 }
+.au-del-btn {
+  background: none; border: 1px solid transparent;
+  color: var(--text-muted); border-radius: var(--radius);
+  padding: 0.3rem; cursor: pointer;
+  display: flex; align-items: center;
+  transition: all 0.15s; flex-shrink: 0;
+}
+.au-del-btn:hover { color: var(--neon-red); border-color: rgba(255,0,64,0.3); background: rgba(255,0,64,0.06); }
+
+/* --- Admin delete modal --- */
+.au-modal-overlay {
+  position: fixed; inset: 0; z-index: 1000;
+  background: rgba(0,0,0,0.7); backdrop-filter: blur(4px);
+  display: flex; align-items: center; justify-content: center;
+}
+.au-modal {
+  background: var(--bg-card);
+  border: 1px solid rgba(255,0,64,0.3);
+  border-radius: var(--radius-lg);
+  width: 360px; max-width: 90vw;
+  box-shadow: 0 0 30px rgba(255,0,64,0.1);
+  animation: modalIn 0.2s ease-out;
+}
+.au-modal-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 1rem 1.25rem 0.75rem;
+  border-bottom: 1px solid var(--border-dim);
+  font-size: 0.9rem; font-weight: 600; color: var(--neon-red);
+}
+.au-modal-close {
+  background: none; border: none; color: var(--text-muted);
+  cursor: pointer; display: flex; padding: 2px;
+  transition: color 0.15s;
+}
+.au-modal-close:hover { color: var(--text); }
+.au-modal-body { padding: 1rem 1.25rem; font-size: 0.85rem; color: var(--text); }
+.au-modal-body strong { color: var(--text-bright); }
+.au-modal-warn {
+  margin-top: 0.5rem; font-size: 0.75rem;
+  color: var(--neon-red); opacity: 0.8;
+}
+.au-modal-footer {
+  display: flex; gap: 0.5rem; justify-content: flex-end;
+  padding: 0.75rem 1.25rem 1rem;
+}
+.au-modal-cancel {
+  background: none; border: 1px solid var(--border-dim);
+  color: var(--text-muted); border-radius: var(--radius);
+  padding: 0.45rem 1rem; font-family: var(--font-mono);
+  font-size: 0.8rem; cursor: pointer; transition: all 0.15s;
+}
+.au-modal-cancel:hover { border-color: var(--text-muted); color: var(--text); }
+.au-modal-confirm {
+  background: rgba(255,0,64,0.1); border: 1px solid var(--neon-red);
+  color: var(--neon-red); border-radius: var(--radius);
+  padding: 0.45rem 1rem; font-family: var(--font-mono);
+  font-size: 0.8rem; font-weight: 600; cursor: pointer; transition: all 0.15s;
+}
+.au-modal-confirm:hover:not(:disabled) { background: rgba(255,0,64,0.18); box-shadow: 0 0 10px rgba(255,0,64,0.2); }
+.au-modal-confirm:disabled { opacity: 0.5; cursor: not-allowed; }
 
 /* ===== MOBILE RESPONSIVE ===== */
 @media (max-width: 768px) {
