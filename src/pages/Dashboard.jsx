@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
 import { SLOT_LABEL, getLocalDate } from '../lib/constants'
-import { LayoutDashboard, CheckCircle, Clock, Star, Calendar, Download, FileSpreadsheet, CalendarCheck, Megaphone, Pin, Plus, Pencil, Trash2, X } from 'lucide-react'
+import { LayoutDashboard, CheckCircle, Clock, Star, Calendar, Download, FileSpreadsheet, CalendarCheck, ClipboardList, Megaphone, Pin, Plus, Pencil, Trash2, X } from 'lucide-react'
 import * as XLSX from 'xlsx'
 
 function formatDateTime(iso) {
@@ -79,11 +79,13 @@ export default function Dashboard() {
   const [annForm, setAnnForm] = useState({ title: '', content: '' })
   const [annLoading, setAnnLoading] = useState(false)
   const [showAnnModal, setShowAnnModal] = useState(false)
+  const [dutyToday, setDutyToday] = useState([])
 
   useEffect(() => {
     if (!profile) return
     fetchData()
     fetchAnnouncements()
+    fetchDutyToday()
     const now = new Date()
     const y = now.getFullYear()
     const m = String(now.getMonth() + 1).padStart(2, '0')
@@ -107,6 +109,14 @@ export default function Dashboard() {
     setTodayCheckins(checkinRes.data || [])
     setMyReservations(reserveRes.data || [])
     setMyRank(rankRes.data)
+  }
+
+  async function fetchDutyToday() {
+    const { data } = await supabase
+      .from('duty_schedule')
+      .select('user_id, users!inner(name)')
+      .eq('duty_date', getLocalDate())
+    setDutyToday(data || [])
   }
 
   async function fetchAnnouncements() {
@@ -286,6 +296,22 @@ export default function Dashboard() {
           <div>
             <div className="status-title">年级排名</div>
             <div className="status-sub">#{myRank?.grade_rank ?? '--'} / {profile.grade}级</div>
+          </div>
+        </div>
+      </div>
+
+      <div className={`status-card duty-today-card${dutyToday.some(d => d.user_id === profile.id) ? ' mine' : ''}`}>
+        <span className={`led ${dutyToday.length ? (dutyToday.some(d => d.user_id === profile.id) ? 'led-green' : 'led-cyan') : 'led-dim'}`} />
+        <ClipboardList size={24} />
+        <div>
+          <div className="status-title">今日值日</div>
+          <div className="status-sub">
+            {dutyToday.length
+              ? <>
+                  {dutyToday.map(d => d.users.name).join('、')}
+                  {dutyToday.some(d => d.user_id === profile.id) && <span className="duty-you"> (你今天值日!)</span>}
+                </>
+              : '今日无人值日'}
           </div>
         </div>
       </div>

@@ -1,5 +1,5 @@
 import { NavLink } from 'react-router-dom'
-import { LayoutDashboard, CheckCheck, CalendarCheck, Trophy, LogOut, User, Sun, Moon } from 'lucide-react'
+import { LayoutDashboard, CheckCheck, CalendarCheck, Trophy, CalendarClock, LogOut, User, Sun, Moon } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
 import { AVATAR_FALLBACK } from '../lib/constants'
@@ -10,6 +10,7 @@ const NAV = [
   { to: '/checkin', icon: <CheckCheck size={16} />, label: '签到' },
   { to: '/reserve', icon: <CalendarCheck size={16} />, label: '预约' },
   { to: '/leaderboard', icon: <Trophy size={16} />, label: '排行' },
+  { to: '/duty', icon: <CalendarClock size={16} />, label: '值日' },
   { to: '/profile', icon: <User size={16} />, label: '资料' },
 ]
 
