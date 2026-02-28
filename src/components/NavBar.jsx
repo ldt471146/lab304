@@ -1,5 +1,5 @@
 import { NavLink } from 'react-router-dom'
-import { LayoutDashboard, CheckCheck, CalendarCheck, Trophy, CalendarClock, LogOut, User, Sun, Moon } from 'lucide-react'
+import { LayoutDashboard, CheckCheck, CalendarCheck, Trophy, CalendarClock, LogOut, User, Users, Sun, Moon } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
 import { AVATAR_FALLBACK } from '../lib/constants'
@@ -37,6 +37,12 @@ export default function NavBar() {
             <span>{n.label}</span>
           </NavLink>
         ))}
+        {profile?.is_admin && (
+          <NavLink to="/admin/users" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>
+            <Users size={16} />
+            <span>用户</span>
+          </NavLink>
+        )}
       </div>
       <div className="nav-bottom">
         <button className="theme-toggle" onClick={toggle}>

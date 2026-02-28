@@ -10,6 +10,7 @@ import ReservePage from './pages/ReservePage'
 import LeaderboardPage from './pages/LeaderboardPage'
 import DutyPage from './pages/DutyPage'
 import ProfilePage from './pages/ProfilePage'
+import AdminUsersPage from './pages/AdminUsersPage'
 import NavBar from './components/NavBar'
 
 function AppRoutes() {
@@ -29,6 +30,7 @@ function AppRoutes() {
           <Route path="/leaderboard" element={<LeaderboardPage />} />
           <Route path="/duty" element={<DutyPage />} />
           <Route path="/profile" element={<ProfilePage />} />
+          <Route path="/admin/users" element={<AdminUsersPage />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </main>
