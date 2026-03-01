@@ -1,5 +1,9 @@
 {
   "appId": "com.lab304.app",
   "appName": "LAB 304",
-  "webDir": "dist"
+  "webDir": "dist",
+  "server": {
+    "url": "http://47.120.21.227/lab304/",
+    "cleartext": true
+  }
 }

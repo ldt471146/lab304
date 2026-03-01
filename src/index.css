@@ -5,6 +5,7 @@
 
 /* --- Color System --- */
 :root {
+  --kb-inset: 0px;
   --neon-green: #00ff41;
   --neon-cyan: #00d4ff;
   --neon-purple: #b829ff;
@@ -228,6 +229,7 @@ body::after {
   background: var(--bg-deep);
   position: relative;
   overflow: hidden;
+  padding: 1rem 0.75rem calc(1rem + var(--kb-inset));
 }
 
 /* Digital Rain canvas behind auth card */
@@ -246,6 +248,9 @@ body::after {
   padding: 2.5rem 2rem;
   width: 400px;
   box-shadow: 0 0 30px rgba(0, 212, 255, 0.1), inset 0 1px 0 rgba(0, 212, 255, 0.1);
+  max-height: calc(100dvh - 2rem - var(--kb-inset));
+  overflow-y: auto;
+  overscroll-behavior: contain;
 }
 
 .auth-header { text-align: center; margin-bottom: 2rem; }
@@ -993,6 +998,24 @@ body::after {
   color: var(--text-bright);
 }
 
+.profile-actions {
+  margin-top: 1rem;
+}
+.btn-logout-profile {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.45rem;
+  width: 100%;
+  color: var(--neon-red);
+  border-color: rgba(255, 0, 64, 0.45);
+  box-shadow: 0 0 10px rgba(255, 0, 64, 0.12);
+}
+.btn-logout-profile:hover {
+  background: rgba(255, 0, 64, 0.08);
+  box-shadow: 0 0 18px rgba(255, 0, 64, 0.2);
+}
+
 /* ===== SCROLLBAR ===== */
 ::-webkit-scrollbar { width: 4px; }
 ::-webkit-scrollbar-track { background: transparent; }
@@ -1480,7 +1503,16 @@ body::after {
   }
 
   /* Auth card */
-  .auth-card { width: 100%; padding: 1.5rem 1.25rem; margin: 0 0.75rem; }
+  .auth-bg {
+    align-items: flex-start;
+    padding-top: max(1rem, env(safe-area-inset-top));
+  }
+  .auth-card {
+    width: 100%;
+    padding: 1.5rem 1.25rem;
+    margin: 0;
+    max-height: calc(100dvh - 1.5rem - var(--kb-inset));
+  }
 
   /* Page header */
   .page-header { margin-bottom: 1rem; }

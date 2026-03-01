@@ -53,6 +53,7 @@ function DigitalRain({ canvasRef }) {
 
 export default function AuthPage() {
   const canvasRef = useRef(null)
+  const authCardRef = useRef(null)
   const [mode, setMode] = useState('login')
   const [remember, setRemember] = useState(() => !!localStorage.getItem(REMEMBER_KEY))
   const [form, setForm] = useState(() => ({
@@ -66,8 +67,44 @@ export default function AuthPage() {
   const [error, setError] = useState('')
   const [registered, setRegistered] = useState(false)
   const [resetSent, setResetSent] = useState(false)
+  const authRedirectUrl = import.meta.env.VITE_AUTH_REDIRECT_URL || (window.location.origin + import.meta.env.BASE_URL)
 
   const set = (k, v) => setForm(f => ({ ...f, [k]: v }))
+
+  useEffect(() => {
+    const onFocusIn = (e) => {
+      const el = e.target
+      if (!(el instanceof HTMLElement)) return
+      if (!el.matches('input,select,textarea')) return
+      setTimeout(() => {
+        el.scrollIntoView({ block: 'center', behavior: 'smooth' })
+      }, 160)
+    }
+
+    document.addEventListener('focusin', onFocusIn)
+
+    const vv = window.visualViewport
+    const updateKeyboardInset = () => {
+      if (!vv) return
+      const inset = Math.max(0, window.innerHeight - vv.height - vv.offsetTop)
+      document.documentElement.style.setProperty('--kb-inset', `${inset}px`)
+    }
+
+    if (vv) {
+      updateKeyboardInset()
+      vv.addEventListener('resize', updateKeyboardInset)
+      vv.addEventListener('scroll', updateKeyboardInset)
+    }
+
+    return () => {
+      document.removeEventListener('focusin', onFocusIn)
+      if (vv) {
+        vv.removeEventListener('resize', updateKeyboardInset)
+        vv.removeEventListener('scroll', updateKeyboardInset)
+      }
+      document.documentElement.style.setProperty('--kb-inset', '0px')
+    }
+  }, [])
 
   function friendlyError(msg) {
     if (/rate limit/i.test(msg)) return '操作过于频繁，请稍后再试'
@@ -96,7 +133,7 @@ export default function AuthPage() {
       email: form.email,
       password: form.password,
       options: {
-        emailRedirectTo: window.location.origin + import.meta.env.BASE_URL,
+        emailRedirectTo: authRedirectUrl,
         data: { name: form.name, student_id: form.student_id, grade: form.grade },
       },
     })
@@ -110,7 +147,7 @@ export default function AuthPage() {
     if (!form.email.trim()) { setError('请输入邮箱地址'); return }
     setLoading(true); setError('')
     const { error } = await supabase.auth.resetPasswordForEmail(form.email, {
-      redirectTo: window.location.origin + import.meta.env.BASE_URL,
+      redirectTo: authRedirectUrl,
     })
     if (error) setError(error.message)
     else setResetSent(true)
@@ -121,7 +158,7 @@ export default function AuthPage() {
     <div className="auth-bg">
       <canvas ref={canvasRef} />
       <DigitalRain canvasRef={canvasRef} />
-      <div className="auth-card">
+      <div className="auth-card" ref={authCardRef}>
         <div className="auth-header">
           <div className="auth-logo">
             <Terminal size={30} />

@@ -15,7 +15,9 @@ import NavBar from './components/NavBar'
 import UpdatePrompt from './components/UpdatePrompt'
 
 const isNativePlatform = Boolean(globalThis?.window?.Capacitor?.isNativePlatform?.())
-const routerBasename = isNativePlatform ? '/' : '/lab304'
+const routerBasename = isNativePlatform
+  ? (import.meta.env.VITE_NATIVE_ROUTER_BASENAME || '/lab304')
+  : '/lab304'
 
 function AppRoutes() {
   const { session, profile, passwordRecovery } = useAuth()

@@ -43,10 +43,6 @@ export default function NavBar() {
             <span>用户</span>
           </NavLink>
         )}
-        <button className="nav-item nav-item-logout mobile-only" onClick={() => supabase.auth.signOut()}>
-          <LogOut size={16} />
-          <span>退出</span>
-        </button>
       </div>
       <div className="nav-bottom">
         <button className="theme-toggle" onClick={toggle}>

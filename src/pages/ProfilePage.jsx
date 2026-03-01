@@ -2,7 +2,7 @@ import { useState, useRef } from 'react'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
 import { AVATAR_FALLBACK, formatMinutes } from '../lib/constants'
-import { User, Upload, Loader2, Save } from 'lucide-react'
+import { User, Upload, Loader2, Save, LogOut } from 'lucide-react'
 
 export default function ProfilePage() {
   const { session, profile, fetchProfile } = useAuth()
@@ -115,6 +115,12 @@ export default function ProfilePage() {
             <span className="profile-field-label">邮箱</span>
             <span className="profile-field-value">{profile.email || session?.user?.email || '--'}</span>
           </div>
+        </div>
+        <div className="profile-actions">
+          <button className="btn-primary btn-logout-profile" onClick={() => supabase.auth.signOut()}>
+            <LogOut size={14} />
+            <span>退出登录</span>
+          </button>
         </div>
       </div>
     </div>

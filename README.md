@@ -45,8 +45,21 @@ npm install
 
 ```env
 VITE_SUPABASE_URL=你的_Supabase_项目_URL
+VITE_SUPABASE_URL_UNIFIED=统一后端_URL(推荐, Web/App 同步时使用)
 VITE_SUPABASE_URL_CN=你的_国内代理_URL(可选, Android 原生端优先使用)
 VITE_SUPABASE_ANON_KEY=你的_Supabase_Anon_Key
+VITE_AUTH_REDIRECT_URL=邮箱验证/重置密码回跳地址(建议填你的国内域名)
+VITE_NATIVE_ROUTER_BASENAME=/lab304
+VITE_UPDATE_MANIFEST_URL=你的_更新清单_URL(可选, 用于 APK 实时更新提示)
+```
+
+`VITE_UPDATE_MANIFEST_URL` 返回 JSON 示例：
+
+```json
+{
+  "version": "0.0.0-20260301121030",
+  "apkUrl": "https://你的域名/lab304/304.apk"
+}
 ```
 
 ### 数据库表结构

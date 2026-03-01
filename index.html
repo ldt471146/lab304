@@ -8,7 +8,7 @@
     <meta name="theme-color" content="#0a0e17" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, interactive-widget=resizes-content" />
     <title>LAB 304</title>
     <script>
       // GitHub Pages SPA redirect receiver
@@ -30,7 +30,8 @@
     <script>
       if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
-          navigator.serviceWorker.register('/lab304/sw.js')
+          const isNative = Boolean(window?.Capacitor?.isNativePlatform?.())
+          if (!isNative) navigator.serviceWorker.register('/lab304/sw.js')
         })
       }
     </script>
