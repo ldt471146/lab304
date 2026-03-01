@@ -4,7 +4,7 @@ import { useAuth } from '../context/AuthContext'
 import { getLocalDate } from '../lib/constants'
 import { generateSchedule, computeStats } from '../lib/dutyScheduler'
 import DatePicker from '../components/DatePicker'
-import { CalendarClock, ChevronLeft, ChevronRight, UserPlus, Trash2, Wand2, BarChart3, X, Plus, Check } from 'lucide-react'
+import { CalendarClock, ChevronLeft, ChevronRight, UserPlus, Trash2, Wand2, BarChart3, X, Check } from 'lucide-react'
 
 const WEEKDAYS = ['日', '一', '二', '三', '四', '五', '六']
 const WEEKDAY_LABELS = ['周一', '周二', '周三', '周四', '周五', '周六', '周日']
@@ -308,23 +308,22 @@ export default function DutyPage() {
                         : <span className="duty-week-empty">当天暂无值日</span>}
                     </div>
                     <div className="duty-cal-editor-row">
-                      <select className="date-input" value={calendarAddId} onChange={e => setCalendarAddId(e.target.value)}>
-                        <option value="">添加成员...</option>
+                      <select
+                        className="date-input"
+                        value={calendarAddId}
+                        onChange={async e => {
+                          const uid = e.target.value
+                          setCalendarAddId(uid)
+                          if (!uid) return
+                          await manualAdd(calendarEditDate, uid)
+                          setCalendarAddId('')
+                        }}
+                      >
+                        <option value="">+ 选择成员后自动添加</option>
                         {calendarEditAvailable.map(u => (
                           <option key={u.id} value={u.id}>{u.name}</option>
                         ))}
                       </select>
-                      <button
-                        className="btn-primary btn-sm"
-                        disabled={!calendarAddId}
-                        onClick={() => {
-                          if (!calendarAddId) return
-                          manualAdd(calendarEditDate, calendarAddId)
-                          setCalendarAddId('')
-                        }}
-                      >
-                        <Plus size={12} />
-                      </button>
                     </div>
                   </>
                 )}
