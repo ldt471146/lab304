@@ -67,7 +67,22 @@ export default function AuthPage() {
   const [error, setError] = useState('')
   const [registered, setRegistered] = useState(false)
   const [resetSent, setResetSent] = useState(false)
-  const authRedirectUrl = import.meta.env.VITE_AUTH_REDIRECT_URL || (window.location.origin + import.meta.env.BASE_URL)
+  const runtimeRedirectUrl = window.location.origin + import.meta.env.BASE_URL
+  const envRedirectUrl = (import.meta.env.VITE_AUTH_REDIRECT_URL || '').trim()
+  const authRedirectUrl = (() => {
+    if (!envRedirectUrl) return runtimeRedirectUrl
+    try {
+      const envUrl = new URL(envRedirectUrl)
+      // If build-time env is a GitHub Pages URL but app is served from another host,
+      // prefer current host so email confirmation returns to the actually used site.
+      if (envUrl.hostname.endsWith('github.io') && envUrl.hostname !== window.location.hostname) {
+        return runtimeRedirectUrl
+      }
+      return envUrl.toString()
+    } catch {
+      return runtimeRedirectUrl
+    }
+  })()
 
   const set = (k, v) => setForm(f => ({ ...f, [k]: v }))
 
