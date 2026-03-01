@@ -6,6 +6,7 @@ import { formatMinutes, formatPoints, AVATAR_FALLBACK, formatGender } from '../l
 import { Users, Search, Clock, Star, Trash2, X, Check, Ban, Eye } from 'lucide-react'
 
 export default function AdminUsersPage() {
+  const PAGE_SIZE = 12
   const { profile } = useAuth()
   const navigate = useNavigate()
   const [users, setUsers] = useState([])
@@ -15,6 +16,7 @@ export default function AdminUsersPage() {
   const [confirmUser, setConfirmUser] = useState(null)
   const [viewUser, setViewUser] = useState(null)
   const [deleting, setDeleting] = useState(false)
+  const [page, setPage] = useState(1)
 
   useEffect(() => {
     if (profile && !profile.is_admin) navigate('/', { replace: true })
@@ -44,6 +46,17 @@ export default function AdminUsersPage() {
       if (!query) return true
       return u.name?.includes(query) || u.student_id?.includes(query)
     })
+  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE))
+  const start = (page - 1) * PAGE_SIZE
+  const pagedUsers = filtered.slice(start, start + PAGE_SIZE)
+
+  useEffect(() => {
+    setPage(1)
+  }, [query, statusFilter])
+
+  useEffect(() => {
+    if (page > totalPages) setPage(totalPages)
+  }, [page, totalPages])
 
   async function handleDelete() {
     if (!confirmUser) return
@@ -111,7 +124,7 @@ export default function AdminUsersPage() {
 
       {loading ? <div className="loading">加载中...</div> : (
         <div className="au-list">
-          {filtered.map(u => (
+          {pagedUsers.map(u => (
             <div key={u.student_id} className="au-item">
               <img
                 className="au-avatar"
@@ -150,6 +163,15 @@ export default function AdminUsersPage() {
             </div>
           ))}
           {filtered.length === 0 && <div className="empty-hint">当前筛选下暂无用户</div>}
+        </div>
+      )}
+      {filtered.length > 0 && (
+        <div className="au-pagination">
+          <span className="au-page-meta">第 {page} / {totalPages} 页，共 {filtered.length} 人</span>
+          <div className="au-page-actions">
+            <button className="btn-preset" disabled={page <= 1} onClick={() => setPage(p => Math.max(1, p - 1))}>上一页</button>
+            <button className="btn-preset" disabled={page >= totalPages} onClick={() => setPage(p => Math.min(totalPages, p + 1))}>下一页</button>
+          </div>
         </div>
       )}
 

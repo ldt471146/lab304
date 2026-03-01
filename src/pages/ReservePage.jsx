@@ -131,7 +131,7 @@ export default function ReservePage() {
           <div className="seat-owner-body">
             <img
               className="seat-owner-avatar"
-              src={occupiedSeatInfo.reserve_user.id_photo_url || occupiedSeatInfo.reserve_user.avatar_url || AVATAR_FALLBACK(occupiedSeatInfo.reserve_user.student_id || occupiedSeatInfo.reserve_user.name || 'user')}
+              src={occupiedSeatInfo.reserve_user.avatar_url || occupiedSeatInfo.reserve_user.id_photo_url || AVATAR_FALLBACK(occupiedSeatInfo.reserve_user.student_id || occupiedSeatInfo.reserve_user.name || 'user')}
               alt=""
             />
             <div className="seat-owner-meta">

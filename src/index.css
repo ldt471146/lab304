@@ -1593,6 +1593,25 @@ body::after {
   transition: all 0.15s; flex-shrink: 0;
 }
 .au-del-btn:hover { color: var(--neon-red); border-color: rgba(255,0,64,0.3); background: rgba(255,0,64,0.06); }
+.au-pagination {
+  margin-top: 0.75rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+.au-page-meta {
+  font-size: 0.76rem;
+  color: var(--text-muted);
+}
+.au-page-actions {
+  display: inline-flex;
+  gap: 0.4rem;
+}
+.au-page-actions .btn-preset:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
 
 /* --- Admin delete modal --- */
 .au-modal-overlay {
@@ -1779,6 +1798,9 @@ body::after {
   .au-stats { flex-direction: column; gap: 0.15rem; }
   .au-stat { font-size: 0.7rem; }
   .au-date { display: none; }
+  .au-pagination { flex-direction: column; align-items: stretch; }
+  .au-page-actions { width: 100%; }
+  .au-page-actions .btn-preset { flex: 1; }
 }
 
 @media (max-width: 380px) {
