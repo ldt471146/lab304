@@ -33,3 +33,14 @@ export function currentGrades() {
   const y = new Date().getFullYear()
   return Array.from({ length: 5 }, (_, i) => String(y - i))
 }
+
+export const GENDER_OPTIONS = [
+  { value: 'male', label: '男' },
+  { value: 'female', label: '女' },
+  { value: 'other', label: '其他' },
+]
+
+export function formatGender(v) {
+  const found = GENDER_OPTIONS.find(g => g.value === v)
+  return found?.label || '--'
+}

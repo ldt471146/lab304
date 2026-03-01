@@ -22,7 +22,7 @@ export default function ReservePage() {
       .order('seat_number')
     if (error) console.error('fetchSeats:', error.message)
     const { data: taken, error: tErr } = await supabase.from('reservations')
-      .select('seat_id, user_id, users!reservations_user_id_fkey(name, student_id, grade, avatar_url)')
+      .select('seat_id, user_id, users(name, student_id, grade, avatar_url)')
       .eq('reserve_date', reserveDate).eq('status', 'active')
     if (tErr) console.error('fetchTaken:', tErr.message)
     const takenBySeat = new Map((taken || []).map(r => [r.seat_id, r]))

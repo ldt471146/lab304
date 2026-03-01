@@ -2,8 +2,8 @@ import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
-import { formatMinutes, formatPoints, AVATAR_FALLBACK } from '../lib/constants'
-import { Users, Search, Clock, Star, Trash2, X, Check, Ban } from 'lucide-react'
+import { formatMinutes, formatPoints, AVATAR_FALLBACK, formatGender } from '../lib/constants'
+import { Users, Search, Clock, Star, Trash2, X, Check, Ban, Eye } from 'lucide-react'
 
 export default function AdminUsersPage() {
   const { profile } = useAuth()
@@ -13,6 +13,7 @@ export default function AdminUsersPage() {
   const [query, setQuery] = useState('')
   const [statusFilter, setStatusFilter] = useState('pending')
   const [confirmUser, setConfirmUser] = useState(null)
+  const [viewUser, setViewUser] = useState(null)
   const [deleting, setDeleting] = useState(false)
 
   useEffect(() => {
@@ -23,7 +24,7 @@ export default function AdminUsersPage() {
     if (!profile?.is_admin) return
     supabase
       .from('users')
-      .select('id, name, student_id, grade, points, total_minutes, created_at, avatar_url, email, approval_status')
+      .select('id, name, student_id, grade, points, total_minutes, created_at, avatar_url, email, approval_status, gender, class_name, phone')
       .order('created_at', { ascending: false })
       .then(({ data }) => { setUsers(data || []); setLoading(false) })
   }, [profile])
@@ -128,6 +129,9 @@ export default function AdminUsersPage() {
                 <span className="au-stat"><Clock size={12} />{formatMinutes(u.total_minutes)}</span>
               </div>
               <span className="au-date">{new Date(u.created_at).toLocaleDateString('zh-CN')}</span>
+              <button className="au-del-btn" onClick={() => setViewUser(u)} title="查看资料">
+                <Eye size={14} />
+              </button>
               {u.id !== profile.id && (
                 <button className="au-del-btn" onClick={() => setConfirmUser(u)} title="删除用户">
                   <Trash2 size={14} />
@@ -165,6 +169,31 @@ export default function AdminUsersPage() {
               <button className="au-modal-confirm" onClick={handleDelete} disabled={deleting}>
                 {deleting ? '删除中...' : '确认删除'}
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+      {viewUser && (
+        <div className="au-modal-overlay" onClick={() => setViewUser(null)}>
+          <div className="au-modal" onClick={e => e.stopPropagation()}>
+            <div className="au-modal-header">
+              <span>用户资料</span>
+              <button className="au-modal-close" onClick={() => setViewUser(null)}><X size={16} /></button>
+            </div>
+            <div className="au-modal-body">
+              <div className="seat-owner-body">
+                <img className="seat-owner-avatar" src={viewUser.avatar_url || AVATAR_FALLBACK(viewUser.student_id)} alt="" />
+                <div className="seat-owner-meta">
+                  <div className="seat-owner-name">{viewUser.name || '--'}</div>
+                  <div>{viewUser.grade || '--'}级 // {viewUser.student_id || '--'}</div>
+                </div>
+              </div>
+              <div style={{ marginTop: '0.8rem', lineHeight: 1.8 }}>
+                <div><b>性别</b>：{formatGender(viewUser.gender)}</div>
+                <div><b>班级</b>：{viewUser.class_name || '--'}</div>
+                <div><b>邮箱</b>：{viewUser.email || '--'}</div>
+                <div><b>联系电话</b>：{viewUser.phone || '--'}</div>
+              </div>
             </div>
           </div>
         </div>

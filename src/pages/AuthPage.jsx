@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { supabase } from '../lib/supabase'
-import { currentGrades } from '../lib/constants'
+import { currentGrades, GENDER_OPTIONS } from '../lib/constants'
 import { Terminal, LogIn, UserPlus, KeyRound } from 'lucide-react'
 
 const GRADES = currentGrades()
@@ -61,6 +61,9 @@ export default function AuthPage() {
     password: '',
     name: '',
     student_id: '',
+    class_name: '',
+    gender: 'male',
+    phone: '',
     grade: GRADES[1] || '2024',
   }))
   const [loading, setLoading] = useState(false)
@@ -148,7 +151,14 @@ export default function AuthPage() {
       password: form.password,
       options: {
         emailRedirectTo: authRedirectUrl,
-        data: { name: form.name, student_id: form.student_id, grade: form.grade },
+        data: {
+          name: form.name,
+          student_id: form.student_id,
+          grade: form.grade,
+          class_name: form.class_name,
+          gender: form.gender,
+          phone: form.phone,
+        },
       },
     })
     if (error) setError(error.message)
@@ -235,6 +245,20 @@ export default function AuthPage() {
                   <select value={form.grade} onChange={e => set('grade', e.target.value)}>
                     {GRADES.map(g => <option key={g} value={g}>{g}</option>)}
                   </select>
+                </div>
+                <div className="field-group">
+                  <label>班级</label>
+                  <input placeholder="如：计科2班" value={form.class_name} onChange={e => set('class_name', e.target.value)} required />
+                </div>
+                <div className="field-group">
+                  <label>性别</label>
+                  <select value={form.gender} onChange={e => set('gender', e.target.value)}>
+                    {GENDER_OPTIONS.map(g => <option key={g.value} value={g.value}>{g.label}</option>)}
+                  </select>
+                </div>
+                <div className="field-group">
+                  <label>联系电话</label>
+                  <input placeholder="请输入联系电话" value={form.phone} onChange={e => set('phone', e.target.value)} required />
                 </div>
               </>
             )}

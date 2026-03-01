@@ -104,6 +104,9 @@ export function AuthProvider({ children }) {
       student_id: meta.student_id,
       name: meta.name,
       grade: meta.grade,
+      class_name: meta.class_name || null,
+      gender: meta.gender || null,
+      phone: meta.phone || null,
       approval_status: 'pending',
     })
     if (error) {

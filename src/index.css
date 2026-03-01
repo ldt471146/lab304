@@ -1083,6 +1083,12 @@ body::after {
   color: var(--text-muted);
   line-height: 1.6;
 }
+.profile-edit-panel {
+  margin-top: 0.8rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
 
 .profile-actions {
   margin-top: 1rem;

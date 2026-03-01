@@ -1,14 +1,15 @@
 import { useState, useRef } from 'react'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
-import { AVATAR_FALLBACK, formatMinutes, formatPoints } from '../lib/constants'
-import { User, Upload, Loader2, Save, LogOut } from 'lucide-react'
+import { AVATAR_FALLBACK, formatMinutes, formatPoints, formatGender, GENDER_OPTIONS } from '../lib/constants'
+import { User, Upload, Loader2, LogOut, X } from 'lucide-react'
 
 export default function ProfilePage() {
   const { session, profile, fetchProfile } = useAuth()
   const fileRef = useRef(null)
   const [uploading, setUploading] = useState(false)
-  const [editName, setEditName] = useState(null)
+  const [editingInfo, setEditingInfo] = useState(false)
+  const [editForm, setEditForm] = useState(null)
   const [saving, setSaving] = useState(false)
   const [msg, setMsg] = useState(null)
 
@@ -38,16 +39,34 @@ export default function ProfilePage() {
     setUploading(false)
   }
 
-  async function handleSaveName() {
-    if (!editName?.trim() || editName.trim() === profile.name) { setEditName(null); return }
+  function startEditInfo() {
+    setEditForm({
+      name: profile.name || '',
+      class_name: profile.class_name || '',
+      gender: profile.gender || 'male',
+      phone: profile.phone || '',
+    })
+    setEditingInfo(true)
+  }
+
+  async function handleSaveInfo() {
+    if (!editForm?.name?.trim()) return
     setSaving(true); setMsg(null)
     const { error } = await supabase
-      .from('users').update({ name: editName.trim() }).eq('id', profile.id)
+      .from('users')
+      .update({
+        name: editForm.name.trim(),
+        class_name: editForm.class_name?.trim() || null,
+        gender: editForm.gender || null,
+        phone: editForm.phone?.trim() || null,
+      })
+      .eq('id', profile.id)
     if (error) { setMsg({ type: 'error', text: error.message }) }
     else {
       await fetchProfile(profile.id)
-      setMsg({ type: 'success', text: '姓名已更新' })
-      setEditName(null)
+      setMsg({ type: 'success', text: '资料已更新' })
+      setEditingInfo(false)
+      setEditForm(null)
     }
     setSaving(false)
   }
@@ -91,21 +110,7 @@ export default function ProfilePage() {
         <div className="profile-fields">
           <div className="profile-field">
             <span className="profile-field-label">姓名</span>
-            {editName !== null ? (
-              <div style={{ display: 'flex', gap: '0.4rem', alignItems: 'center' }}>
-                <input className="profile-edit-input" value={editName}
-                  onChange={e => setEditName(e.target.value)}
-                  onKeyDown={e => e.key === 'Enter' && handleSaveName()} autoFocus />
-                <button className="icon-btn" onClick={handleSaveName} disabled={saving}>
-                  <Save size={14} style={{ color: 'var(--neon-green)' }} />
-                </button>
-              </div>
-            ) : (
-              <span className="profile-field-value" style={{ cursor: 'pointer' }}
-                onClick={() => setEditName(profile.name)} title="点击编辑">
-                {profile.name}
-              </span>
-            )}
+            <span className="profile-field-value">{profile.name}</span>
           </div>
           <div className="profile-field">
             <span className="profile-field-label">学号</span>
@@ -114,6 +119,18 @@ export default function ProfilePage() {
           <div className="profile-field">
             <span className="profile-field-label">邮箱</span>
             <span className="profile-field-value">{profile.email || session?.user?.email || '--'}</span>
+          </div>
+          <div className="profile-field">
+            <span className="profile-field-label">性别</span>
+            <span className="profile-field-value">{formatGender(profile.gender)}</span>
+          </div>
+          <div className="profile-field">
+            <span className="profile-field-label">班级</span>
+            <span className="profile-field-value">{profile.class_name || '--'}</span>
+          </div>
+          <div className="profile-field">
+            <span className="profile-field-label">联系电话</span>
+            <span className="profile-field-value">{profile.phone || '--'}</span>
           </div>
         </div>
         <div className="profile-id-card">
@@ -128,10 +145,47 @@ export default function ProfilePage() {
               <div><b>姓名</b>：{profile.name || '--'}</div>
               <div><b>学号</b>：{profile.student_id || '--'}</div>
               <div><b>年级</b>：{profile.grade || '--'}级</div>
+              <div><b>性别</b>：{formatGender(profile.gender)}</div>
+              <div><b>班级</b>：{profile.class_name || '--'}</div>
+              <div><b>联系电话</b>：{profile.phone || '--'}</div>
               <div><b>邮箱</b>：{profile.email || session?.user?.email || '--'}</div>
             </div>
           </div>
         </div>
+        {!editingInfo ? (
+          <button className="btn-primary" type="button" onClick={startEditInfo} style={{ marginTop: '0.8rem' }}>
+            {'> 编辑资料'}
+          </button>
+        ) : (
+          <div className="profile-edit-panel">
+            <div className="field-group">
+              <label>姓名</label>
+              <input value={editForm.name} onChange={e => setEditForm(f => ({ ...f, name: e.target.value }))} />
+            </div>
+            <div className="field-group">
+              <label>班级</label>
+              <input value={editForm.class_name} onChange={e => setEditForm(f => ({ ...f, class_name: e.target.value }))} />
+            </div>
+            <div className="field-group">
+              <label>性别</label>
+              <select value={editForm.gender} onChange={e => setEditForm(f => ({ ...f, gender: e.target.value }))}>
+                {GENDER_OPTIONS.map(g => <option key={g.value} value={g.value}>{g.label}</option>)}
+              </select>
+            </div>
+            <div className="field-group">
+              <label>联系电话</label>
+              <input value={editForm.phone} onChange={e => setEditForm(f => ({ ...f, phone: e.target.value }))} />
+            </div>
+            <div className="announcement-form-actions">
+              <button className="btn-ann-save" type="button" onClick={handleSaveInfo} disabled={saving}>
+                {saving ? '保存中...' : '保存'}
+              </button>
+              <button className="btn-ann-cancel" type="button" onClick={() => { setEditingInfo(false); setEditForm(null) }}>
+                <X size={14} /> 取消
+              </button>
+            </div>
+          </div>
+        )}
         <div className="profile-actions">
           <button className="btn-primary btn-logout-profile" onClick={() => supabase.auth.signOut()}>
             <LogOut size={14} />
