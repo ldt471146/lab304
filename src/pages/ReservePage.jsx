@@ -22,7 +22,7 @@ export default function ReservePage() {
       .order('seat_number')
     if (error) console.error('fetchSeats:', error.message)
     const { data: taken, error: tErr } = await supabase.from('reservations')
-      .select('seat_id, user_id, users(name, student_id, grade, avatar_url)')
+      .select('seat_id, user_id, users(name, student_id, grade, avatar_url, id_photo_url)')
       .eq('reserve_date', reserveDate).eq('status', 'active')
     if (tErr) console.error('fetchTaken:', tErr.message)
     const takenBySeat = new Map((taken || []).map(r => [r.seat_id, r]))
@@ -131,7 +131,7 @@ export default function ReservePage() {
           <div className="seat-owner-body">
             <img
               className="seat-owner-avatar"
-              src={occupiedSeatInfo.reserve_user.avatar_url || AVATAR_FALLBACK(occupiedSeatInfo.reserve_user.student_id || occupiedSeatInfo.reserve_user.name || 'user')}
+              src={occupiedSeatInfo.reserve_user.id_photo_url || occupiedSeatInfo.reserve_user.avatar_url || AVATAR_FALLBACK(occupiedSeatInfo.reserve_user.student_id || occupiedSeatInfo.reserve_user.name || 'user')}
               alt=""
             />
             <div className="seat-owner-meta">

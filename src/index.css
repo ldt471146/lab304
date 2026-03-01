@@ -1066,6 +1066,11 @@ body::after {
   color: var(--neon-cyan);
   margin-bottom: 0.45rem;
 }
+.profile-id-upload-row {
+  display: flex;
+  align-items: center;
+  margin-bottom: 0.55rem;
+}
 .profile-id-body {
   display: flex;
   align-items: center;

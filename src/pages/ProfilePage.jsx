@@ -6,8 +6,10 @@ import { User, Upload, Loader2, LogOut, X } from 'lucide-react'
 
 export default function ProfilePage() {
   const { session, profile, fetchProfile } = useAuth()
-  const fileRef = useRef(null)
-  const [uploading, setUploading] = useState(false)
+  const avatarRef = useRef(null)
+  const idPhotoRef = useRef(null)
+  const [avatarUploading, setAvatarUploading] = useState(false)
+  const [idPhotoUploading, setIdPhotoUploading] = useState(false)
   const [editingInfo, setEditingInfo] = useState(false)
   const [editForm, setEditForm] = useState(null)
   const [saving, setSaving] = useState(false)
@@ -22,21 +24,45 @@ export default function ProfilePage() {
       setMsg({ type: 'error', text: '文件大小不能超过 2MB' })
       return
     }
-    setUploading(true); setMsg(null)
+    setAvatarUploading(true); setMsg(null)
     const ext = file.name.split('.').pop()
     const path = `${profile.id}/avatar.${ext}`
     const { error: upErr } = await supabase.storage
       .from('avatars')
       .upload(path, file, { upsert: true })
-    if (upErr) { setMsg({ type: 'error', text: upErr.message }); setUploading(false); return }
+    if (upErr) { setMsg({ type: 'error', text: upErr.message }); setAvatarUploading(false); return }
     const { data: { publicUrl } } = supabase.storage.from('avatars').getPublicUrl(path)
     const url = `${publicUrl}?t=${Date.now()}`
     const { error: dbErr } = await supabase
       .from('users').update({ avatar_url: url }).eq('id', profile.id)
-    if (dbErr) { setMsg({ type: 'error', text: dbErr.message }); setUploading(false); return }
+    if (dbErr) { setMsg({ type: 'error', text: dbErr.message }); setAvatarUploading(false); return }
     await fetchProfile(profile.id)
     setMsg({ type: 'success', text: '头像已更新' })
-    setUploading(false)
+    setAvatarUploading(false)
+  }
+
+  async function handleIdPhotoUpload(e) {
+    const file = e.target.files?.[0]
+    if (!file) return
+    if (file.size > 2 * 1024 * 1024) {
+      setMsg({ type: 'error', text: '文件大小不能超过 2MB' })
+      return
+    }
+    setIdPhotoUploading(true); setMsg(null)
+    const ext = file.name.split('.').pop()
+    const path = `${profile.id}/id-photo.${ext}`
+    const { error: upErr } = await supabase.storage
+      .from('avatars')
+      .upload(path, file, { upsert: true })
+    if (upErr) { setMsg({ type: 'error', text: upErr.message }); setIdPhotoUploading(false); return }
+    const { data: { publicUrl } } = supabase.storage.from('avatars').getPublicUrl(path)
+    const url = `${publicUrl}?t=${Date.now()}`
+    const { error: dbErr } = await supabase
+      .from('users').update({ id_photo_url: url }).eq('id', profile.id)
+    if (dbErr) { setMsg({ type: 'error', text: dbErr.message }); setIdPhotoUploading(false); return }
+    await fetchProfile(profile.id)
+    setMsg({ type: 'success', text: '个人照片已更新' })
+    setIdPhotoUploading(false)
   }
 
   function startEditInfo() {
@@ -79,18 +105,21 @@ export default function ProfilePage() {
       </div>
       <div className="profile-card">
         <div className="profile-avatar-wrap">
-          <div className="profile-avatar-btn" onClick={() => !uploading && fileRef.current?.click()}>
+          <div className="profile-avatar-btn" onClick={() => !avatarUploading && avatarRef.current?.click()}>
             <img
               className="profile-avatar"
               src={profile.avatar_url || AVATAR_FALLBACK(profile.student_id)}
               alt=""
             />
             <div className="profile-avatar-overlay">
-              {uploading ? <Loader2 size={16} className="spin" /> : <Upload size={16} />}
+              {avatarUploading ? <Loader2 size={16} className="spin" /> : <Upload size={16} />}
             </div>
-            <input ref={fileRef} type="file" accept="image/jpeg,image/png,image/gif,image/webp"
+            <input ref={avatarRef} type="file" accept="image/jpeg,image/png,image/gif,image/webp"
               style={{ display: 'none' }} onChange={handleAvatarUpload} />
           </div>
+        </div>
+        <div className="selected-hint" style={{ marginBottom: '0.8rem' }}>
+          头像可自定义，用于个人资料展示。
         </div>
         {msg && <div className={`msg ${msg.type}`}>{msg.text}</div>}
         <div className="profile-stats">
@@ -135,10 +164,28 @@ export default function ProfilePage() {
         </div>
         <div className="profile-id-card">
           <div className="profile-id-title">个人信息卡</div>
+          <div className="profile-id-upload-row">
+            <button
+              type="button"
+              className="btn-primary"
+              onClick={() => !idPhotoUploading && idPhotoRef.current?.click()}
+              disabled={idPhotoUploading}
+              style={{ width: 'auto', padding: '0.35rem 0.75rem', fontSize: '0.75rem' }}
+            >
+              {idPhotoUploading ? '上传中...' : '> 上传个人照片'}
+            </button>
+            <input
+              ref={idPhotoRef}
+              type="file"
+              accept="image/jpeg,image/png,image/webp"
+              style={{ display: 'none' }}
+              onChange={handleIdPhotoUpload}
+            />
+          </div>
           <div className="profile-id-body">
             <img
               className="profile-id-photo"
-              src={profile.avatar_url || AVATAR_FALLBACK(profile.student_id)}
+              src={profile.id_photo_url || AVATAR_FALLBACK(`id-${profile.student_id}`)}
               alt=""
             />
             <div className="profile-id-meta">

@@ -24,7 +24,7 @@ export default function AdminUsersPage() {
     if (!profile?.is_admin) return
     supabase
       .from('users')
-      .select('id, name, student_id, grade, points, total_minutes, created_at, avatar_url, email, approval_status, gender, class_name, phone')
+      .select('id, name, student_id, grade, points, total_minutes, created_at, avatar_url, id_photo_url, email, approval_status, gender, class_name, phone')
       .order('created_at', { ascending: false })
       .then(({ data }) => { setUsers(data || []); setLoading(false) })
   }, [profile])
@@ -182,7 +182,7 @@ export default function AdminUsersPage() {
             </div>
             <div className="au-modal-body">
               <div className="seat-owner-body">
-                <img className="seat-owner-avatar" src={viewUser.avatar_url || AVATAR_FALLBACK(viewUser.student_id)} alt="" />
+                <img className="seat-owner-avatar" src={viewUser.id_photo_url || viewUser.avatar_url || AVATAR_FALLBACK(viewUser.student_id)} alt="" />
                 <div className="seat-owner-meta">
                   <div className="seat-owner-name">{viewUser.name || '--'}</div>
                   <div>{viewUser.grade || '--'}级 // {viewUser.student_id || '--'}</div>
