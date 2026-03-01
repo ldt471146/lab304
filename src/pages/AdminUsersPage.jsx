@@ -6,7 +6,7 @@ import { formatMinutes, formatPoints, AVATAR_FALLBACK, formatGender } from '../l
 import { Users, Search, Clock, Star, Trash2, X, Check, Ban, Eye } from 'lucide-react'
 
 export default function AdminUsersPage() {
-  const PAGE_SIZE = 12
+  const PAGE_SIZE = 10
   const { profile } = useAuth()
   const navigate = useNavigate()
   const [users, setUsers] = useState([])
