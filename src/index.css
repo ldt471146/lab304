@@ -184,6 +184,24 @@ body::after {
   text-shadow: 0 0 6px rgba(0, 255, 65, 0.3);
 }
 .nav-item.active::before { opacity: 1; color: var(--neon-green); }
+.nav-label-wrap {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+.nav-badge {
+  min-width: 1.15rem;
+  height: 1.15rem;
+  padding: 0 0.3rem;
+  border-radius: 999px;
+  background: rgba(255, 0, 64, 0.16);
+  border: 1px solid rgba(255, 0, 64, 0.45);
+  color: #ff4a78;
+  font-size: 0.66rem;
+  line-height: 1.05rem;
+  text-align: center;
+  font-weight: 700;
+}
 
 .mobile-only { display: none; }
 
@@ -1359,6 +1377,7 @@ body::after {
   border-color: var(--neon-cyan);
   box-shadow: 0 0 8px rgba(0, 212, 255, 0.15);
 }
+.au-filter-row { margin-bottom: 0.6rem; }
 .au-list { display: flex; flex-direction: column; gap: 0.4rem; }
 .au-item {
   display: flex; align-items: center; gap: 0.85rem;

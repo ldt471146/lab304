@@ -11,6 +11,7 @@ export default function AdminUsersPage() {
   const [users, setUsers] = useState([])
   const [loading, setLoading] = useState(true)
   const [query, setQuery] = useState('')
+  const [statusFilter, setStatusFilter] = useState('pending')
   const [confirmUser, setConfirmUser] = useState(null)
   const [deleting, setDeleting] = useState(false)
 
@@ -29,9 +30,19 @@ export default function AdminUsersPage() {
 
   if (!profile?.is_admin) return null
 
-  const filtered = query
-    ? users.filter(u => u.name?.includes(query) || u.student_id?.includes(query))
-    : users
+  const pendingCount = users.filter(u => u.approval_status === 'pending').length
+  const approvedCount = users.filter(u => u.approval_status === 'approved').length
+  const rejectedCount = users.filter(u => u.approval_status === 'rejected').length
+
+  const filtered = users
+    .filter(u => {
+      if (statusFilter === 'all') return true
+      return u.approval_status === statusFilter
+    })
+    .filter(u => {
+      if (!query) return true
+      return u.name?.includes(query) || u.student_id?.includes(query)
+    })
 
   async function handleDelete() {
     if (!confirmUser) return
@@ -69,7 +80,22 @@ export default function AdminUsersPage() {
       <div className="page-header">
         <Users size={20} />
         <h2>用户管理</h2>
-        <span className="date-badge">{filtered.length} 人</span>
+        <span className="date-badge">待审核 {pendingCount}</span>
+      </div>
+
+      <div className="tab-group au-filter-row">
+        <button className={`tab ${statusFilter === 'pending' ? 'active' : ''}`} onClick={() => setStatusFilter('pending')}>
+          待审核 ({pendingCount})
+        </button>
+        <button className={`tab ${statusFilter === 'approved' ? 'active' : ''}`} onClick={() => setStatusFilter('approved')}>
+          已通过 ({approvedCount})
+        </button>
+        <button className={`tab ${statusFilter === 'rejected' ? 'active' : ''}`} onClick={() => setStatusFilter('rejected')}>
+          已驳回 ({rejectedCount})
+        </button>
+        <button className={`tab ${statusFilter === 'all' ? 'active' : ''}`} onClick={() => setStatusFilter('all')}>
+          全部 ({users.length})
+        </button>
       </div>
 
       <div className="au-search">
@@ -119,6 +145,7 @@ export default function AdminUsersPage() {
               )}
             </div>
           ))}
+          {filtered.length === 0 && <div className="empty-hint">当前筛选下暂无用户</div>}
         </div>
       )}
 

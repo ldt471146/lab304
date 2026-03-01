@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react'
 import { NavLink } from 'react-router-dom'
 import { LayoutDashboard, CheckCheck, CalendarCheck, Trophy, CalendarClock, LogOut, User, Users, Sun, Moon } from 'lucide-react'
 import { supabase } from '../lib/supabase'
@@ -17,6 +18,27 @@ const NAV = [
 export default function NavBar() {
   const { profile } = useAuth()
   const { theme, toggle } = useTheme()
+  const [pendingCount, setPendingCount] = useState(0)
+
+  useEffect(() => {
+    if (!profile?.is_admin) return
+    let mounted = true
+    supabase
+      .from('users')
+      .select('id', { count: 'exact', head: true })
+      .eq('approval_status', 'pending')
+      .then(({ count, error }) => {
+        if (!mounted) return
+        if (error) {
+          console.error('fetchPendingCount:', error.message)
+          setPendingCount(0)
+          return
+        }
+        setPendingCount(count || 0)
+      })
+    return () => { mounted = false }
+  }, [profile?.is_admin])
+
   return (
     <nav className="navbar">
       <div className="nav-brand cursor-blink">LAB_304</div>
@@ -40,7 +62,10 @@ export default function NavBar() {
         {profile?.is_admin && (
           <NavLink to="/admin/users" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>
             <Users size={16} />
-            <span>用户</span>
+            <span className="nav-label-wrap">
+              <span>用户</span>
+              {pendingCount > 0 && <span className="nav-badge">{pendingCount}</span>}
+            </span>
           </NavLink>
         )}
       </div>
