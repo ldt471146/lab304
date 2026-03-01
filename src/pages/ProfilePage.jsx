@@ -174,45 +174,36 @@ export default function ProfilePage() {
                 <span className="profile-field-label">联系电话</span>
                 <span className="profile-field-value">{profile.phone || '--'}</span>
               </div>
-            </div>
-
-            <div className="profile-id-card">
-              <div className="profile-id-title">个人信息卡</div>
-              <div className="profile-id-upload-row">
-                <button
-                  type="button"
-                  className="btn-primary"
-                  onClick={() => !idPhotoUploading && idPhotoRef.current?.click()}
-                  disabled={idPhotoUploading}
-                  style={{ width: 'auto', padding: '0.35rem 0.75rem', fontSize: '0.75rem' }}
-                >
-                  {idPhotoUploading ? '上传中...' : '> 上传个人照片'}
-                </button>
-                <input
-                  ref={idPhotoRef}
-                  type="file"
-                  accept="image/jpeg,image/png,image/webp"
-                  style={{ display: 'none' }}
-                  onChange={handleIdPhotoUpload}
-                />
-              </div>
-              <div className="profile-id-body">
-                <img
-                  className="profile-id-photo"
-                  src={profile.id_photo_url || AVATAR_FALLBACK(`id-${profile.student_id}`)}
-                  alt=""
-                />
-                <div className="profile-id-meta">
-                  <div><b>姓名</b>：{profile.name || '--'}</div>
-                  <div><b>学号</b>：{profile.student_id || '--'}</div>
-                  <div><b>年级</b>：{profile.grade || '--'}级</div>
-                  <div><b>性别</b>：{formatGender(profile.gender)}</div>
-                  <div><b>班级</b>：{profile.class_name || '--'}</div>
-                  <div><b>联系电话</b>：{profile.phone || '--'}</div>
-                  <div><b>邮箱</b>：{profile.email || session?.user?.email || '--'}</div>
+              <div className="profile-field profile-field-photo">
+                <span className="profile-field-label">个人照片</span>
+                <div className="profile-photo-row">
+                  <img
+                    className="profile-photo-thumb"
+                    src={profile.id_photo_url || AVATAR_FALLBACK(`id-${profile.student_id}`)}
+                    alt=""
+                  />
+                  <div className="profile-photo-actions">
+                    <button
+                      type="button"
+                      className="btn-primary"
+                      onClick={() => !idPhotoUploading && idPhotoRef.current?.click()}
+                      disabled={idPhotoUploading}
+                      style={{ width: 'auto', padding: '0.35rem 0.75rem', fontSize: '0.75rem' }}
+                    >
+                      {idPhotoUploading ? '上传中...' : '> 上传个人照片'}
+                    </button>
+                    <div className="profile-photo-upload-note">用于管理员核对身份</div>
+                  </div>
                 </div>
               </div>
             </div>
+            <input
+              ref={idPhotoRef}
+              type="file"
+              accept="image/jpeg,image/png,image/webp"
+              style={{ display: 'none' }}
+              onChange={handleIdPhotoUpload}
+            />
 
             {!editingInfo ? (
               <button className="btn-primary" type="button" onClick={startEditInfo} style={{ marginTop: '0.8rem' }}>
