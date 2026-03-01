@@ -1,4 +1,10 @@
-export default function ZoneSeatMap({ seats, selectedSeat, onSelect, occupiedKey = 'occupied' }) {
+export default function ZoneSeatMap({
+  seats,
+  selectedSeat,
+  onSelect,
+  occupiedKey = 'occupied',
+  onOccupiedClick,
+}) {
   const zones = {}
   seats.forEach(s => {
     const zk = `${s.zone_row}-${s.zone_col}`
@@ -24,13 +30,20 @@ export default function ZoneSeatMap({ seats, selectedSeat, onSelect, occupiedKey
                     const occupied = seat[occupiedKey]
                     const seatId = seat.seat_id ?? seat.id
                     const mine = selectedSeat === seatId
+                    const canClickOccupied = occupied && typeof onOccupiedClick === 'function'
                     return (
                       <button
                         key={seatId}
-                        className={`seat ${occupied ? 'occupied' : ''} ${mine ? 'selected' : ''}`}
-                        onClick={() => !occupied && onSelect(mine ? null : seatId)}
-                        title={occupied ? '已占用' : seat.seat_number}
-                        disabled={occupied}
+                        className={`seat ${occupied ? 'occupied' : ''} ${canClickOccupied ? 'occupied-clickable' : ''} ${mine ? 'selected' : ''}`}
+                        onClick={() => {
+                          if (occupied) {
+                            if (canClickOccupied) onOccupiedClick(seat)
+                            return
+                          }
+                          onSelect(mine ? null : seatId)
+                        }}
+                        title={occupied ? (seat.occupiedTitle || '已占用') : seat.seat_number}
+                        disabled={occupied && !canClickOccupied}
                       >
                         {seat.seat_number}
                       </button>

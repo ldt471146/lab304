@@ -116,6 +116,22 @@ export default function ProfilePage() {
             <span className="profile-field-value">{profile.email || session?.user?.email || '--'}</span>
           </div>
         </div>
+        <div className="profile-id-card">
+          <div className="profile-id-title">个人信息卡</div>
+          <div className="profile-id-body">
+            <img
+              className="profile-id-photo"
+              src={profile.avatar_url || AVATAR_FALLBACK(profile.student_id)}
+              alt=""
+            />
+            <div className="profile-id-meta">
+              <div><b>姓名</b>：{profile.name || '--'}</div>
+              <div><b>学号</b>：{profile.student_id || '--'}</div>
+              <div><b>年级</b>：{profile.grade || '--'}级</div>
+              <div><b>邮箱</b>：{profile.email || session?.user?.email || '--'}</div>
+            </div>
+          </div>
+        </div>
         <div className="profile-actions">
           <button className="btn-primary btn-logout-profile" onClick={() => supabase.auth.signOut()}>
             <LogOut size={14} />

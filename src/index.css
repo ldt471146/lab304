@@ -732,6 +732,12 @@ body::after {
   cursor: default;
   box-shadow: 0 0 6px rgba(255, 0, 64, 0.1);
 }
+.seat.occupied.occupied-clickable { cursor: pointer; }
+.seat.occupied.occupied-clickable:hover {
+  border-color: rgba(255, 80, 120, 0.55);
+  box-shadow: 0 0 10px rgba(255, 50, 110, 0.22);
+  transform: scale(1.03);
+}
 .seat.selected {
   background: rgba(0, 255, 65, 0.1);
   border-color: var(--neon-green);
@@ -803,6 +809,39 @@ body::after {
   font-family: var(--font-mono);
 }
 .reservation-item .icon-btn.danger { margin-left: auto; }
+.seat-owner-card {
+  margin-bottom: 0.75rem;
+  padding: 0.7rem 0.85rem;
+  border-radius: var(--radius);
+  border: 1px solid rgba(255, 0, 64, 0.2);
+  background: rgba(255, 0, 64, 0.05);
+}
+.seat-owner-title {
+  font-size: 0.78rem;
+  color: #ff6b8a;
+  margin-bottom: 0.55rem;
+}
+.seat-owner-body {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+}
+.seat-owner-avatar {
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 1px solid rgba(255, 0, 64, 0.35);
+}
+.seat-owner-meta {
+  font-size: 0.76rem;
+  color: var(--text-muted);
+}
+.seat-owner-name {
+  color: var(--text-bright);
+  font-size: 0.82rem;
+  margin-bottom: 0.15rem;
+}
 
 /* ===== LEADERBOARD ===== */
 .leaderboard { display: flex; flex-direction: column; gap: 0.4rem; }
@@ -1014,6 +1053,35 @@ body::after {
 .profile-field-value {
   font-size: 0.85rem;
   color: var(--text-bright);
+}
+.profile-id-card {
+  margin-top: 0.8rem;
+  padding: 0.75rem;
+  border-radius: var(--radius);
+  border: 1px solid rgba(0, 212, 255, 0.2);
+  background: rgba(0, 212, 255, 0.04);
+}
+.profile-id-title {
+  font-size: 0.75rem;
+  color: var(--neon-cyan);
+  margin-bottom: 0.45rem;
+}
+.profile-id-body {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+.profile-id-photo {
+  width: 56px;
+  height: 56px;
+  border-radius: 10px;
+  object-fit: cover;
+  border: 1px solid var(--border-glow);
+}
+.profile-id-meta {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  line-height: 1.6;
 }
 
 .profile-actions {

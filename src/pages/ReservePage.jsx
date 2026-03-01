@@ -1,7 +1,7 @@
 import { useEffect, useState, useCallback } from 'react'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
-import { getLocalDate } from '../lib/constants'
+import { AVATAR_FALLBACK, getLocalDate } from '../lib/constants'
 import ZoneSeatMap from '../components/ZoneSeatMap'
 import { CalendarCheck, Trash2 } from 'lucide-react'
 
@@ -10,6 +10,7 @@ export default function ReservePage() {
   const [seats, setSeats] = useState([])
   const [myReservations, setMyReservations] = useState([])
   const [selectedSeat, setSelectedSeat] = useState(null)
+  const [occupiedSeatInfo, setOccupiedSeatInfo] = useState(null)
   const [reserveDate, setReserveDate] = useState(getLocalDate)
   const [loading, setLoading] = useState(false)
   const [msg, setMsg] = useState(null)
@@ -21,11 +22,25 @@ export default function ReservePage() {
       .order('seat_number')
     if (error) console.error('fetchSeats:', error.message)
     const { data: taken, error: tErr } = await supabase.from('reservations')
-      .select('seat_id').eq('reserve_date', reserveDate).eq('status', 'active')
+      .select('seat_id, user_id, users!reservations_user_id_fkey(name, student_id, grade, avatar_url)')
+      .eq('reserve_date', reserveDate).eq('status', 'active')
     if (tErr) console.error('fetchTaken:', tErr.message)
-    const takenIds = new Set((taken || []).map(r => r.seat_id))
-    setSeats((data || []).map(s => ({ ...s, taken: takenIds.has(s.id) })))
-  }, [reserveDate])
+    const takenBySeat = new Map((taken || []).map(r => [r.seat_id, r]))
+    setSeats((data || []).map(s => {
+      const reservation = takenBySeat.get(s.id) || null
+      const reserveUser = reservation?.users || null
+      const isMine = reservation?.user_id === profile?.id
+      return {
+        ...s,
+        taken: !!reservation,
+        reserve_user: reserveUser,
+        reserve_user_id: reservation?.user_id || null,
+        occupiedTitle: reservation
+          ? (isMine ? `你已预约 ${s.seat_number}` : `${reserveUser?.name || '其他同学'} 已预约`)
+          : s.seat_number,
+      }
+    }))
+  }, [reserveDate, profile?.id])
 
   const fetchMyReservations = useCallback(async () => {
     if (!profile) return
@@ -40,6 +55,10 @@ export default function ReservePage() {
     fetchSeats()
     fetchMyReservations()
   }, [fetchSeats, fetchMyReservations])
+
+  useEffect(() => {
+    setOccupiedSeatInfo(null)
+  }, [reserveDate])
 
   async function handleReserve() {
     if (!selectedSeat) return
@@ -80,18 +99,46 @@ export default function ReservePage() {
       <div className="reserve-controls">
         <input type="date" value={reserveDate}
           min={getLocalDate()}
-          onChange={e => { setReserveDate(e.target.value); setSelectedSeat(null) }}
+          onChange={e => { setReserveDate(e.target.value); setSelectedSeat(null); setOccupiedSeatInfo(null) }}
           className="date-input"
         />
       </div>
 
       <div className="section-title">选择座位</div>
-      <ZoneSeatMap seats={seats} selectedSeat={selectedSeat} onSelect={setSelectedSeat} occupiedKey="taken" />
+      <ZoneSeatMap
+        seats={seats}
+        selectedSeat={selectedSeat}
+        onSelect={(seatId) => {
+          setSelectedSeat(seatId)
+          setOccupiedSeatInfo(null)
+        }}
+        occupiedKey="taken"
+        onOccupiedClick={(seat) => setOccupiedSeatInfo(seat)}
+      />
 
       {selectedSeat && (
         <div className="selected-hint">
           已选: {seats.find(s => s.id === selectedSeat)?.seat_number}
           {' // '}{reserveDate}
+        </div>
+      )}
+
+      {occupiedSeatInfo?.reserve_user && (
+        <div className="seat-owner-card">
+          <div className="seat-owner-title">
+            座位 {occupiedSeatInfo.seat_number} 已被预约
+          </div>
+          <div className="seat-owner-body">
+            <img
+              className="seat-owner-avatar"
+              src={occupiedSeatInfo.reserve_user.avatar_url || AVATAR_FALLBACK(occupiedSeatInfo.reserve_user.student_id || occupiedSeatInfo.reserve_user.name || 'user')}
+              alt=""
+            />
+            <div className="seat-owner-meta">
+              <div className="seat-owner-name">{occupiedSeatInfo.reserve_user.name || '未命名用户'}</div>
+              <div>{occupiedSeatInfo.reserve_user.grade || '--'}级 // {occupiedSeatInfo.reserve_user.student_id || '--'}</div>
+            </div>
+          </div>
         </div>
       )}
       {msg && <div className={`msg ${msg.type}`}>{msg.text}</div>}
