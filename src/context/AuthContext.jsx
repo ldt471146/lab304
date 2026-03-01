@@ -2,6 +2,17 @@ import { createContext, useContext, useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase'
 
 const AuthContext = createContext(null)
+const SESSION_TIMEOUT_MS = 12000
+const PROFILE_TIMEOUT_MS = 10000
+
+function withTimeout(promise, timeoutMs, label) {
+  return Promise.race([
+    promise,
+    new Promise((_, reject) => {
+      setTimeout(() => reject(new Error(`${label} timeout`)), timeoutMs)
+    }),
+  ])
+}
 
 export function AuthProvider({ children }) {
   const [session, setSession] = useState(undefined)
@@ -38,10 +49,21 @@ export function AuthProvider({ children }) {
         window.history.replaceState({}, '', window.location.pathname)
       }
 
-      const { data: { session } } = await supabase.auth.getSession()
-      setSession(session)
-      if (session) fetchProfile(session.user.id)
-      else setProfile(null)
+      try {
+        const { data: { session } } = await withTimeout(
+          supabase.auth.getSession(),
+          SESSION_TIMEOUT_MS,
+          'getSession'
+        )
+        setSession(session)
+        if (session) await fetchProfile(session.user.id)
+        else setProfile(null)
+      } catch (e) {
+        console.error('hydrate session failed:', e?.message || e)
+        // Never keep bootstrap state as undefined, otherwise UI can be stuck on loading.
+        setSession(null)
+        setProfile(null)
+      }
     }
 
     initFromUrlAndHydrateSession()
@@ -59,13 +81,22 @@ export function AuthProvider({ children }) {
   }, [])
 
   async function fetchProfile(userId) {
-    const { data, error } = await supabase
-      .from('users')
-      .select('*')
-      .eq('id', userId)
-      .maybeSingle()
-    if (error) console.error('fetchProfile:', error.message)
-    setProfile(error ? null : data)
+    try {
+      const { data, error } = await withTimeout(
+        supabase
+          .from('users')
+          .select('*')
+          .eq('id', userId)
+          .maybeSingle(),
+        PROFILE_TIMEOUT_MS,
+        'fetchProfile'
+      )
+      if (error) console.error('fetchProfile:', error.message)
+      setProfile(error ? null : data)
+    } catch (e) {
+      console.error('fetchProfile failed:', e?.message || e)
+      setProfile(null)
+    }
   }
 
   function clearPasswordRecovery() { setPasswordRecovery(false) }
