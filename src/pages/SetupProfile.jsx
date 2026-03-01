@@ -25,7 +25,7 @@ export default function SetupProfile() {
   async function handleSubmit(e) {
     e.preventDefault()
     setLoading(true); setError('')
-    const { error } = await supabase.from('users').insert({
+    const { error } = await supabase.from('users').upsert({
       id: session.user.id,
       student_id: form.student_id,
       name: form.name,
@@ -34,7 +34,7 @@ export default function SetupProfile() {
       gender: form.gender,
       phone: form.phone,
       approval_status: 'pending',
-    })
+    }, { onConflict: 'id' })
     if (error) {
       setError(error.message)
       setLoading(false)

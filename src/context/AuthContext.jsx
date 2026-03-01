@@ -111,6 +111,12 @@ export function AuthProvider({ children }) {
     })
     if (error) {
       console.error('createProfile failed:', error.message)
+      // Race-safe fallback: profile may already exist (or just got created elsewhere).
+      const fallback = await queryProfile(user.id)
+      if (fallback) {
+        setProfile(fallback)
+        return fallback
+      }
       setProfile(null)
       return null
     }

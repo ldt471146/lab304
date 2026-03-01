@@ -17,7 +17,7 @@ import UpdatePrompt from './components/UpdatePrompt'
 
 const isNativePlatform = Boolean(globalThis?.window?.Capacitor?.isNativePlatform?.())
 const routerBasename = isNativePlatform
-  ? (import.meta.env.VITE_NATIVE_ROUTER_BASENAME || '/lab304')
+  ? (import.meta.env.VITE_NATIVE_ROUTER_BASENAME || '/')
   : '/lab304'
 
 function AppRoutes() {
