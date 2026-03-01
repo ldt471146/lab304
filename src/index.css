@@ -955,6 +955,22 @@ body::after {
   position: relative;
   overflow: hidden;
 }
+.profile-card-wide {
+  max-width: 1100px;
+}
+.profile-layout {
+  display: grid;
+  grid-template-columns: 320px minmax(0, 1fr);
+  gap: 1rem;
+  align-items: start;
+}
+.profile-pane {
+  min-width: 0;
+}
+.profile-pane-left {
+  position: sticky;
+  top: 0;
+}
 .profile-card::before {
   content: '';
   position: absolute;
@@ -1672,8 +1688,14 @@ body::after {
   .score-num { font-size: 0.9rem; }
 
   /* Profile */
-  .profile-card { padding: 1.5rem 1rem; }
+  .profile-card { padding: 1.1rem 0.9rem; }
+  .profile-layout { grid-template-columns: 1fr; gap: 0.8rem; }
+  .profile-pane-left { position: static; }
   .profile-avatar { width: 64px; height: 64px; }
+  .profile-fields { gap: 0.5rem; }
+  .profile-field { padding: 0.5rem 0.6rem; }
+  .profile-id-body { align-items: flex-start; }
+  .profile-id-photo { width: 52px; height: 52px; }
 
   /* Checked-out banner */
   .checked-out-banner { padding: 0.85rem 1rem; gap: 0.75rem; }
