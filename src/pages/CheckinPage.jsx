@@ -1,8 +1,8 @@
 import { useEffect, useState, useCallback } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
 import { isOpenNow, OPEN_HOUR, CLOSE_HOUR, getLocalDate, formatMinutes } from '../lib/constants'
-import ZoneSeatMap from '../components/ZoneSeatMap'
 import { CheckCheck, MapPin, LogOut, Clock, Timer } from 'lucide-react'
 
 function formatDuration(ms) {
@@ -16,9 +16,10 @@ function formatDuration(ms) {
 
 export default function CheckinPage() {
   const { profile, fetchProfile } = useAuth()
-  const [seats, setSeats] = useState([])
+  const navigate = useNavigate()
   const [todayCheckins, setTodayCheckins] = useState([])
-  const [selectedSeat, setSelectedSeat] = useState(null)
+  const [myReservations, setMyReservations] = useState([])
+  const [selectedReservationId, setSelectedReservationId] = useState(null)
   const [loading, setLoading] = useState(false)
   const [checkoutLoading, setCheckoutLoading] = useState(false)
   const [msg, setMsg] = useState(null)
@@ -29,13 +30,7 @@ export default function CheckinPage() {
 
   const activeCheckin = todayCheckins.find(c => !c.checked_out_at) || null
   const finishedCheckins = todayCheckins.filter(c => c.checked_out_at)
-  const canCheckin = open && !activeCheckin
-
-  const fetchSeats = useCallback(async () => {
-    const { data, error } = await supabase.from('seat_status_today').select('*').order('seat_number')
-    if (error) console.error('fetchSeats:', error.message)
-    setSeats(data || [])
-  }, [])
+  const canCheckin = open && !activeCheckin && myReservations.length > 0
 
   const fetchTodayCheckins = useCallback(async () => {
     if (!profile) return
@@ -45,10 +40,36 @@ export default function CheckinPage() {
     setTodayCheckins(data || [])
   }, [profile, today])
 
+  const fetchMyReservations = useCallback(async () => {
+    if (!profile) return
+    const { data, error } = await supabase
+      .from('reservations')
+      .select('id, seat_id, reserve_date, status, seats(seat_number)')
+      .eq('user_id', profile.id)
+      .eq('reserve_date', today)
+      .eq('status', 'active')
+      .order('created_at', { ascending: true })
+    if (error) console.error('fetchMyReservations:', error.message)
+    setMyReservations(data || [])
+  }, [profile, today])
+
   useEffect(() => {
-    fetchSeats()
     fetchTodayCheckins()
-  }, [fetchSeats, fetchTodayCheckins])
+    fetchMyReservations()
+  }, [fetchTodayCheckins, fetchMyReservations])
+
+  useEffect(() => {
+    if (myReservations.length === 1) {
+      setSelectedReservationId(myReservations[0].id)
+      return
+    }
+    if (myReservations.length === 0) {
+      setSelectedReservationId(null)
+      return
+    }
+    const exists = myReservations.some(r => r.id === selectedReservationId)
+    if (!exists) setSelectedReservationId(myReservations[0].id)
+  }, [myReservations, selectedReservationId])
 
   useEffect(() => {
     if (!activeCheckin) { setElapsed(''); return }
@@ -74,17 +95,23 @@ export default function CheckinPage() {
 
   async function handleCheckin() {
     if (!profile || !open) return
+    const reservation = myReservations.find(r => r.id === selectedReservationId)
+    if (!reservation) {
+      setMsg({ type: 'error', text: '请先预约今日座位后再签到' })
+      return
+    }
     setLoading(true); setMsg(null)
-    const payload = { user_id: profile.id, check_date: today, time_slot: 'allday' }
-    if (selectedSeat) payload.seat_id = selectedSeat
-    const { error } = await supabase.from('checkins').insert(payload)
+    const { error } = await supabase.from('checkins').insert({
+      user_id: profile.id,
+      check_date: today,
+      time_slot: 'allday',
+      seat_id: reservation.seat_id,
+    })
     if (error) {
       setMsg({ type: 'error', text: error.message })
     } else {
-      const isFirst = todayCheckins.length === 0
-      setMsg({ type: 'success', text: isFirst ? '签到成功 // +1 积分' : '签到成功' })
-      await Promise.all([fetchTodayCheckins(), fetchSeats(), fetchProfile(profile.id)])
-      setSelectedSeat(null)
+      setMsg({ type: 'success', text: '签到成功' })
+      await Promise.all([fetchTodayCheckins(), fetchMyReservations(), fetchProfile(profile.id)])
     }
     setLoading(false)
   }
@@ -97,20 +124,10 @@ export default function CheckinPage() {
       setMsg({ type: 'error', text: error.message })
     } else {
       setMsg({ type: 'success', text: '签退成功' })
-      await Promise.all([fetchTodayCheckins(), fetchSeats(), fetchProfile(profile.id)])
+      await Promise.all([fetchTodayCheckins(), fetchMyReservations(), fetchProfile(profile.id)])
     }
     setCheckoutLoading(false)
   }
-
-  const seatMap = seats.reduce((acc, s) => {
-    if (!acc[s.seat_id]) acc[s.seat_id] = { ...s, checkin_user: null }
-    if (s.checkin_user) acc[s.seat_id] = s
-    return acc
-  }, {})
-  const dedupedSeats = Object.values(seatMap).map(s => ({
-    ...s,
-    occupied: !!s.checkin_user,
-  }))
 
   const formatTime = (iso) => iso ? new Date(iso).toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' }) : '--'
 
@@ -177,17 +194,34 @@ export default function CheckinPage() {
         </div>
       )}
 
+      {open && !activeCheckin && myReservations.length === 0 && (
+        <div className="out-of-slot-hint">
+          <MapPin size={28} />
+          <div>今天还没有预约座位</div>
+          <small>请先预约后再签到</small>
+          <button className="btn-primary" style={{ marginTop: '0.8rem' }} onClick={() => navigate('/reserve')}>
+            {'> 去预约'}
+          </button>
+        </div>
+      )}
+
       {canCheckin && (
         <>
-          <div className="section-title"><MapPin size={14} /> 选择座位（可选）</div>
-          <ZoneSeatMap
-            seats={dedupedSeats}
-            selectedSeat={selectedSeat}
-            onSelect={setSelectedSeat}
-          />
-          {selectedSeat && (
+          <div className="section-title"><MapPin size={14} /> 选择今日预约座位</div>
+          <select
+            className="date-input"
+            value={selectedReservationId || ''}
+            onChange={(e) => setSelectedReservationId(Number(e.target.value))}
+          >
+            {myReservations.map(r => (
+              <option key={r.id} value={r.id}>
+                {r.seats?.seat_number || `座位ID ${r.seat_id}`} // {r.reserve_date}
+              </option>
+            ))}
+          </select>
+          {selectedReservationId && (
             <div className="selected-hint">
-              已选: {dedupedSeats.find(s => s.seat_id === selectedSeat)?.seat_number}
+              已选: {myReservations.find(r => r.id === selectedReservationId)?.seats?.seat_number || '--'}
             </div>
           )}
           <button className="btn-primary checkin-btn" onClick={handleCheckin} disabled={loading}>

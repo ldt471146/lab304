@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
-import { SLOT_TEXT, getLocalDate, formatMinutes } from '../lib/constants'
+import { SLOT_TEXT, getLocalDate, formatMinutes, formatPoints } from '../lib/constants'
 import { LayoutDashboard, CheckCircle, Clock, Star, Calendar, Download, FileSpreadsheet, CalendarCheck, ClipboardList, Megaphone, Pin, Plus, Pencil, Trash2, X } from 'lucide-react'
 import * as XLSX from 'xlsx'
 
@@ -272,7 +272,7 @@ export default function Dashboard() {
             <span className="stat-label">学习</span>
           </div>
           <div className="stat">
-            <span className="stat-num">{profile.points}</span>
+            <span className="stat-num">{formatPoints(profile.points)}</span>
             <span className="stat-label">积分</span>
           </div>
           <div className="stat">

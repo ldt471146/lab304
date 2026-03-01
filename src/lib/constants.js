@@ -23,6 +23,12 @@ export function formatMinutes(m) {
   return `${(m / 60).toFixed(1)} 小时`
 }
 
+export function formatPoints(points) {
+  const n = Number(points ?? 0)
+  if (!Number.isFinite(n)) return '0.00'
+  return n.toFixed(2)
+}
+
 export function currentGrades() {
   const y = new Date().getFullYear()
   return Array.from({ length: 5 }, (_, i) => String(y - i))

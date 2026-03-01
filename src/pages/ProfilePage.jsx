@@ -1,7 +1,7 @@
 import { useState, useRef } from 'react'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
-import { AVATAR_FALLBACK, formatMinutes } from '../lib/constants'
+import { AVATAR_FALLBACK, formatMinutes, formatPoints } from '../lib/constants'
 import { User, Upload, Loader2, Save, LogOut } from 'lucide-react'
 
 export default function ProfilePage() {
@@ -80,7 +80,7 @@ export default function ProfilePage() {
             <div className="profile-stat-label">学习</div>
           </div>
           <div className="profile-stat">
-            <div className="profile-stat-num">{profile.points ?? 0}</div>
+            <div className="profile-stat-num">{formatPoints(profile.points)}</div>
             <div className="profile-stat-label">积分</div>
           </div>
           <div className="profile-stat">

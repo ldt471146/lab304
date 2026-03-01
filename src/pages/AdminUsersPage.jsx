@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
-import { formatMinutes, AVATAR_FALLBACK } from '../lib/constants'
+import { formatMinutes, formatPoints, AVATAR_FALLBACK } from '../lib/constants'
 import { Users, Search, Clock, Star, Trash2, X } from 'lucide-react'
 
 export default function AdminUsersPage() {
@@ -78,7 +78,7 @@ export default function AdminUsersPage() {
                 <span className="au-meta">{u.grade}级 // {u.student_id} // {u.email || '--'}</span>
               </div>
               <div className="au-stats">
-                <span className="au-stat"><Star size={12} />{u.points ?? 0}</span>
+                <span className="au-stat"><Star size={12} />{formatPoints(u.points)}</span>
                 <span className="au-stat"><Clock size={12} />{formatMinutes(u.total_minutes)}</span>
               </div>
               <span className="au-date">{new Date(u.created_at).toLocaleDateString('zh-CN')}</span>
