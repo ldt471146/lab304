@@ -6,7 +6,7 @@ import ZoneSeatMap from '../components/ZoneSeatMap'
 import { CalendarCheck, Trash2 } from 'lucide-react'
 
 export default function ReservePage() {
-  const { profile } = useAuth()
+  const { profile, fetchProfile } = useAuth()
   const [seats, setSeats] = useState([])
   const [myReservations, setMyReservations] = useState([])
   const [selectedSeat, setSelectedSeat] = useState(null)
@@ -14,6 +14,17 @@ export default function ReservePage() {
   const [reserveDate, setReserveDate] = useState(getLocalDate)
   const [loading, setLoading] = useState(false)
   const [msg, setMsg] = useState(null)
+
+  function getReserveErrorText(error) {
+    const raw = `${error?.message || ''} ${error?.details || ''} ${error?.hint || ''}`.toLowerCase()
+    if (error?.code === '23505') {
+      if (raw.includes('user') || raw.includes('用户') || raw.includes('multiple') || raw.includes('same day')) {
+        return '一个人不可以同时预约多个座位'
+      }
+      return '该座位已被预约'
+    }
+    return error?.message || '预约失败'
+  }
 
   const fetchSeats = useCallback(async () => {
     const { data, error } = await supabase.from('seats')
@@ -62,6 +73,11 @@ export default function ReservePage() {
 
   async function handleReserve() {
     if (!selectedSeat) return
+    const hasSameDayReservation = myReservations.some(r => r.reserve_date === reserveDate && r.status === 'active')
+    if (hasSameDayReservation) {
+      setMsg({ type: 'error', text: '一个人不可以同时预约多个座位' })
+      return
+    }
     setLoading(true); setMsg(null)
     const { error } = await supabase.from('reservations').insert({
       user_id: profile.id,
@@ -70,7 +86,7 @@ export default function ReservePage() {
       time_slot: 'allday',
     })
     if (error) {
-      setMsg({ type: 'error', text: error.code === '23505' ? '该座位已被预约' : error.message })
+      setMsg({ type: 'error', text: getReserveErrorText(error) })
     } else {
       setMsg({ type: 'success', text: '预约成功' })
       setSelectedSeat(null)
@@ -79,14 +95,40 @@ export default function ReservePage() {
     setLoading(false)
   }
 
-  async function handleCancel(id) {
-    const { error } = await supabase.from('reservations').update({ status: 'cancelled' }).eq('id', id)
+  async function handleCancel(reservation) {
+    const { data: activeCheckins, error: findError } = await supabase
+      .from('checkins')
+      .select('id')
+      .eq('user_id', profile.id)
+      .eq('check_date', reservation.reserve_date)
+      .eq('seat_id', reservation.seat_id)
+      .is('checked_out_at', null)
+    if (findError) {
+      setMsg({ type: 'error', text: findError.message })
+      return
+    }
+    if (activeCheckins?.length) {
+      const results = await Promise.all(
+        activeCheckins.map(c => supabase.rpc('checkout_checkin', { p_checkin_id: c.id }))
+      )
+      const checkoutError = results.find(r => r.error)?.error
+      if (checkoutError) {
+        setMsg({ type: 'error', text: checkoutError.message })
+        return
+      }
+    }
+
+    const { error } = await supabase.from('reservations').update({ status: 'cancelled' }).eq('id', reservation.id)
     if (error) {
       setMsg({ type: 'error', text: error.message })
       return
     }
-    fetchMyReservations()
-    fetchSeats()
+    setMsg({ type: 'success', text: '已取消预约，并结束对应学习计时' })
+    await Promise.all([
+      fetchMyReservations(),
+      fetchSeats(),
+      fetchProfile(profile.id),
+    ])
   }
 
   return (
@@ -154,7 +196,7 @@ export default function ReservePage() {
               <div key={r.id} className="reservation-item">
                 <span className="seat-tag">{r.seats?.seat_number}</span>
                 <span>{r.reserve_date}</span>
-                <button className="icon-btn danger" onClick={() => handleCancel(r.id)}>
+                <button className="icon-btn danger" onClick={() => handleCancel(r)}>
                   <Trash2 size={14} />
                 </button>
               </div>

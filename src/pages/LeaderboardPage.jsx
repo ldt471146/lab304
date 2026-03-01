@@ -4,6 +4,17 @@ import { useAuth } from '../context/AuthContext'
 import { formatMinutes } from '../lib/constants'
 import { Trophy, Medal } from 'lucide-react'
 
+function getWeekRange() {
+  const now = new Date()
+  const start = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+  const day = (start.getDay() + 6) % 7 // Monday=0
+  start.setDate(start.getDate() - day)
+  start.setHours(0, 0, 0, 0)
+  const end = new Date(start)
+  end.setDate(start.getDate() + 7)
+  return { start, end }
+}
+
 export default function LeaderboardPage() {
   const { profile } = useAuth()
   const [tab, setTab] = useState('total')
@@ -12,10 +23,47 @@ export default function LeaderboardPage() {
 
   const fetchList = useCallback(async () => {
     setLoading(true)
-    const view = tab === 'total' ? 'leaderboard' : 'leaderboard_monthly'
-    const { data, error } = await supabase.from(view).select('*').limit(50)
-    if (error) console.error('fetchList:', error.message)
-    setList(data || [])
+    if (tab === 'weekly') {
+      const { start, end } = getWeekRange()
+      const { data, error } = await supabase
+        .from('checkins')
+        .select('user_id, checked_at, checked_out_at, users!inner(id, name, student_id, grade)')
+        .gte('checked_at', start.toISOString())
+        .lt('checked_at', end.toISOString())
+        .not('checked_out_at', 'is', null)
+        .limit(1000)
+      if (error) {
+        console.error('fetchWeeklyList:', error.message)
+        setList([])
+      } else {
+        const map = new Map()
+        for (const row of data || []) {
+          const mins = Math.max(0, Math.floor((new Date(row.checked_out_at) - new Date(row.checked_at)) / 60000))
+          const prev = map.get(row.user_id)
+          if (!prev) {
+            map.set(row.user_id, {
+              id: row.users.id,
+              name: row.users.name,
+              student_id: row.users.student_id,
+              grade: row.users.grade,
+              weekly_minutes: mins,
+            })
+          } else {
+            prev.weekly_minutes += mins
+          }
+        }
+        const ranked = Array.from(map.values())
+          .sort((a, b) => b.weekly_minutes - a.weekly_minutes)
+          .slice(0, 50)
+          .map((u, i) => ({ ...u, rank: i + 1 }))
+        setList(ranked)
+      }
+    } else {
+      const view = tab === 'total' ? 'leaderboard' : 'leaderboard_monthly'
+      const { data, error } = await supabase.from(view).select('*').limit(50)
+      if (error) console.error('fetchList:', error.message)
+      setList(data || [])
+    }
     setLoading(false)
   }, [tab])
 
@@ -37,6 +85,7 @@ export default function LeaderboardPage() {
 
       <div className="tab-group">
         <button className={`tab ${tab === 'total' ? 'active' : ''}`} onClick={() => setTab('total')}>总榜</button>
+        <button className={`tab ${tab === 'weekly' ? 'active' : ''}`} onClick={() => setTab('weekly')}>周榜</button>
         <button className={`tab ${tab === 'monthly' ? 'active' : ''}`} onClick={() => setTab('monthly')}>月榜</button>
       </div>
 
@@ -54,6 +103,8 @@ export default function LeaderboardPage() {
                 <div className="lb-score">
                   {tab === 'total'
                     ? <><span className="score-num">{formatMinutes(item.total_minutes)}</span></>
+                    : tab === 'weekly'
+                      ? <><span className="score-num">{formatMinutes(item.weekly_minutes)}</span></>
                     : <><span className="score-num">{formatMinutes(item.monthly_minutes)}</span></>
                   }
                 </div>
