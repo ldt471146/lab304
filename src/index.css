@@ -283,19 +283,63 @@ body::after {
   box-shadow: 0 0 20px rgba(0, 212, 255, 0.2), inset 0 0 20px rgba(0, 212, 255, 0.05);
   animation: logoPulse 3s ease-in-out infinite;
 }
-.auth-logo-brand {
+.tech-logo {
+  width: 78px;
+  height: 78px;
+  border-radius: 50%;
+  position: relative;
+  border: 1px solid rgba(0, 212, 255, 0.65);
+  background:
+    radial-gradient(circle at 32% 28%, rgba(0, 212, 255, 0.28), transparent 52%),
+    radial-gradient(circle at 68% 72%, rgba(0, 255, 65, 0.2), transparent 58%),
+    linear-gradient(145deg, rgba(11, 19, 34, 0.95), rgba(5, 11, 20, 0.95));
+  box-shadow:
+    0 0 28px rgba(0, 212, 255, 0.28),
+    inset 0 0 22px rgba(0, 212, 255, 0.12);
   overflow: hidden;
-  background: rgba(0, 212, 255, 0.08);
+  isolation: isolate;
 }
-.auth-logo-image {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  display: block;
+.tech-logo-grid {
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(0, 212, 255, 0.12) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0, 212, 255, 0.12) 1px, transparent 1px);
+  background-size: 10px 10px;
+  opacity: 0.35;
 }
+.tech-logo-core {
+  position: absolute;
+  inset: 50% auto auto 50%;
+  transform: translate(-50%, -50%);
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #8bf8ff;
+  background: radial-gradient(circle, rgba(0, 212, 255, 0.25), rgba(0, 212, 255, 0.05));
+  border: 1px solid rgba(139, 248, 255, 0.7);
+  box-shadow: 0 0 16px rgba(0, 212, 255, 0.35);
+  z-index: 2;
+}
+.tech-logo-pulse {
+  position: absolute;
+  inset: 8px;
+  border-radius: 50%;
+  border: 1px solid rgba(0, 212, 255, 0.45);
+  z-index: 1;
+}
+.tech-logo-pulse-a { animation: techPulse 2.2s ease-out infinite; }
+.tech-logo-pulse-b { animation: techPulse 2.2s ease-out infinite 1.1s; }
 @keyframes logoPulse {
   0%, 100% { box-shadow: 0 0 20px rgba(0, 212, 255, 0.2), inset 0 0 20px rgba(0, 212, 255, 0.05); }
   50% { box-shadow: 0 0 30px rgba(0, 212, 255, 0.4), inset 0 0 30px rgba(0, 212, 255, 0.1); }
+}
+@keyframes techPulse {
+  0% { transform: scale(0.75); opacity: 0.6; }
+  100% { transform: scale(1.25); opacity: 0; }
 }
 .auth-header h1 {
   font-size: 1.4rem;
@@ -315,6 +359,12 @@ body::after {
   border: 1px solid rgba(0, 212, 255, 0.2);
   border-radius: 999px;
   padding: 0.18rem 0.55rem;
+}
+.auth-subcredit {
+  margin-top: 0.45rem;
+  font-size: 0.62rem;
+  color: rgba(0, 212, 255, 0.62);
+  letter-spacing: 0.24em;
 }
 
 /* --- Tab Group --- */
