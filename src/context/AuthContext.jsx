@@ -14,15 +14,28 @@ export function AuthProvider({ children }) {
     const code = params.get('code')
     const tokenHash = params.get('token_hash')
     const type = params.get('type')
+    const hashParams = new URLSearchParams((window.location.hash || '').replace(/^#/, ''))
+    const accessToken = hashParams.get('access_token')
+    const refreshToken = hashParams.get('refresh_token')
 
     if (code) {
       supabase.auth.exchangeCodeForSession(code)
     } else if (tokenHash) {
       supabase.auth.verifyOtp({ token_hash: tokenHash, type: type || 'email' })
+    } else if (accessToken && refreshToken) {
+      // Fallback for hash-based email confirmation callbacks
+      supabase.auth.setSession({ access_token: accessToken, refresh_token: refreshToken })
     }
-    if (code || tokenHash) {
+    if (code || tokenHash || accessToken) {
       window.history.replaceState({}, '', window.location.pathname)
     }
+
+    // Ensure session is hydrated on page refresh / direct open
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session)
+      if (session) fetchProfile(session.user.id)
+      else setProfile(null)
+    })
 
     // Single source of truth: onAuthStateChange handles all session updates
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
