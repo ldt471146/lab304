@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
+import { BrowserRouter, HashRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { AuthProvider, useAuth } from './context/AuthContext'
 import { ThemeProvider } from './context/ThemeContext'
 import AuthPage from './pages/AuthPage'
@@ -47,14 +47,16 @@ function AppRoutes() {
 }
 
 export default function App() {
+  const Router = isNativePlatform ? BrowserRouter : HashRouter
+  const routerProps = isNativePlatform ? { basename: routerBasename } : {}
   return (
     <ThemeProvider>
-      <BrowserRouter basename={routerBasename}>
+      <Router {...routerProps}>
         <AuthProvider>
           <UpdatePrompt />
           <AppRoutes />
         </AuthProvider>
-      </BrowserRouter>
+      </Router>
     </ThemeProvider>
   )
 }

@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { NavLink } from 'react-router-dom'
-import { LayoutDashboard, CheckCheck, CalendarCheck, Trophy, CalendarClock, LogOut, User, Users, Sun, Moon } from 'lucide-react'
+import { LayoutDashboard, CheckCheck, CalendarCheck, Trophy, CalendarClock, LogOut, User, Users, Sun, Moon, RotateCw } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
 import { AVATAR_FALLBACK } from '../lib/constants'
@@ -68,6 +68,10 @@ export default function NavBar() {
             </span>
           </NavLink>
         )}
+        <button className="nav-item nav-item-btn mobile-only" type="button" onClick={() => window.location.reload()}>
+          <RotateCw size={16} />
+          <span>刷新</span>
+        </button>
       </div>
       <div className="nav-bottom">
         <button className="theme-toggle" onClick={toggle}>

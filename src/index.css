@@ -185,6 +185,13 @@ body::after {
   text-shadow: 0 0 6px rgba(0, 255, 65, 0.3);
 }
 .nav-item.active::before { opacity: 1; color: var(--neon-green); }
+.nav-item-btn {
+  border: none;
+  background: none;
+  width: 100%;
+  text-align: left;
+  cursor: pointer;
+}
 .nav-label-wrap {
   display: inline-flex;
   align-items: center;
@@ -1669,6 +1676,7 @@ body::after {
     border-radius: 0;
     border: none;
   }
+  .nav-item-btn { width: auto; text-align: center; }
   .nav-item::before { display: none; }
   .nav-item.active { background: rgba(0, 255, 65, 0.06); }
   .mobile-only { display: flex; }
