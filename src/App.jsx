@@ -14,6 +14,9 @@ import AdminUsersPage from './pages/AdminUsersPage'
 import NavBar from './components/NavBar'
 import UpdatePrompt from './components/UpdatePrompt'
 
+const isNativePlatform = Boolean(globalThis?.window?.Capacitor?.isNativePlatform?.())
+const routerBasename = isNativePlatform ? '/' : '/lab304'
+
 function AppRoutes() {
   const { session, profile, passwordRecovery } = useAuth()
   if (session === undefined || (session && profile === undefined)) return <div className="loading full">加载中...</div>
@@ -42,7 +45,7 @@ function AppRoutes() {
 export default function App() {
   return (
     <ThemeProvider>
-      <BrowserRouter basename="/lab304">
+      <BrowserRouter basename={routerBasename}>
         <AuthProvider>
           <UpdatePrompt />
           <AppRoutes />

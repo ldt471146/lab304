@@ -45,6 +45,7 @@ npm install
 
 ```env
 VITE_SUPABASE_URL=你的_Supabase_项目_URL
+VITE_SUPABASE_URL_CN=你的_国内代理_URL(可选, Android 原生端优先使用)
 VITE_SUPABASE_ANON_KEY=你的_Supabase_Anon_Key
 ```
 
