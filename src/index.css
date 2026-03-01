@@ -89,10 +89,10 @@ body::after {
 
 .main-content {
   flex: 1;
-  margin-left: 220px;
+  margin-left: 280px;
   padding: 2rem;
-  width: calc(100vw - 220px);
-  max-width: 1450px;
+  width: calc(100vw - 280px);
+  max-width: 1550px;
 }
 
 .page { padding-bottom: 3rem; }
@@ -101,7 +101,7 @@ body::after {
 .navbar {
   position: fixed;
   top: 0; left: 0;
-  width: 220px;
+  width: 280px;
   height: 100vh;
   background: var(--bg-panel);
   border-right: 1px solid var(--border-dim);
@@ -113,7 +113,7 @@ body::after {
 }
 
 .nav-brand {
-  font-size: 1.1rem;
+  font-size: 1.35rem;
   font-weight: 700;
   color: var(--neon-cyan);
   text-shadow: 0 0 10px rgba(0, 212, 255, 0.4);
@@ -143,7 +143,7 @@ body::after {
 }
 
 .nav-username {
-  font-size: 0.78rem;
+  font-size: 0.96rem;
   color: var(--text);
   overflow: hidden;
   text-overflow: ellipsis;
@@ -156,11 +156,11 @@ body::after {
   display: flex;
   align-items: center;
   gap: 0.6rem;
-  padding: 0.6rem 0.75rem;
+  padding: 0.8rem 0.95rem;
   border-radius: var(--radius);
   color: var(--text-muted);
   text-decoration: none;
-  font-size: 0.8rem;
+  font-size: 1rem;
   font-family: var(--font-mono);
   transition: all 0.15s;
   border: 1px solid transparent;
@@ -214,7 +214,7 @@ body::after {
   color: var(--text-muted); cursor: pointer;
   border-radius: var(--radius);
   font-family: var(--font-mono);
-  font-size: 0.78rem;
+  font-size: 0.94rem;
   transition: all 0.15s;
 }
 .nav-logout:hover { background: rgba(255, 0, 64, 0.1); color: var(--neon-red); }
@@ -2076,7 +2076,7 @@ body::after {
   padding-top: 0.45rem;
 }
 .duty-week-edit-title {
-  font-size: 0.8rem;
+  font-size: 0.9rem;
   color: var(--text-muted);
 }
 .duty-week-empty {
@@ -2099,6 +2099,7 @@ body::after {
 }
 
 @media (min-width: 1024px) {
+  body { font-size: 16px; }
   .page-header h2 { font-size: 1.25rem; }
   .section-title { font-size: 0.9rem; }
   .status-title { font-size: 0.92rem; }
