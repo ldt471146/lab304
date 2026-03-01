@@ -66,8 +66,8 @@ export default function DutyPage() {
   const [generating, setGenerating] = useState(false)
   const [stats, setStats] = useState(null)
   const [weekStart, setWeekStart] = useState(() => startOfWeekMonday(new Date()))
-  const [weekEditDate, setWeekEditDate] = useState('')
-  const [weekAddId, setWeekAddId] = useState('')
+  const [calendarEditDate, setCalendarEditDate] = useState('')
+  const [calendarAddId, setCalendarAddId] = useState('')
 
   useEffect(() => { fetchSchedule(); fetchMembers() }, [])
 
@@ -222,8 +222,8 @@ export default function DutyPage() {
       }
     })
   }, [weekStart, scheduleMap])
-  const weekEditEntries = weekEditDate ? (scheduleMap[weekEditDate] || []) : []
-  const weekEditAvailable = allUsers.filter(u => !weekEditEntries.some(e => e.userId === u.id))
+  const calendarEditEntries = calendarEditDate ? (scheduleMap[calendarEditDate] || []) : []
+  const calendarEditAvailable = allUsers.filter(u => !calendarEditEntries.some(e => e.userId === u.id))
 
   return (
     <div className="page">
@@ -259,9 +259,18 @@ export default function DutyPage() {
                   cell.otherMonth && 'other-month',
                   isToday && 'today',
                   isMine && 'mine',
+                  isAdmin && cell.date && calendarEditDate === cell.date && 'selected',
                 ].filter(Boolean).join(' ')
                 return (
-                  <div key={i} className={cls}>
+                  <div
+                    key={i}
+                    className={cls}
+                    onClick={() => {
+                      if (!isAdmin || !cell.date) return
+                      setCalendarEditDate(cell.date)
+                      setCalendarAddId('')
+                    }}
+                  >
                     <span className="duty-day-num">{cell.day}</span>
                     {entries.length > 0 && (
                       <div className="duty-names">
@@ -274,7 +283,53 @@ export default function DutyPage() {
                 )
               })}
             </div>
-            {isAdmin && <div className="duty-cal-hint">排班编辑请在右侧“一周值日便签”中操作</div>}
+            {isAdmin && <div className="duty-cal-hint">点击日期可直接编辑当天值日成员</div>}
+            {isAdmin && (
+              <div className="duty-cal-editor">
+                <div className="duty-cal-editor-head">
+                  {calendarEditDate ? `${calendarEditDate} 值日编辑` : '先点击日历中的日期再编辑'}
+                </div>
+                {calendarEditDate && (
+                  <>
+                    <div className="duty-week-tags">
+                      {calendarEditEntries.length
+                        ? calendarEditEntries.map(e => (
+                          <span key={e.userId} className="duty-week-tag">
+                            {e.name}
+                            <button
+                              type="button"
+                              className="duty-week-tag-remove"
+                              onClick={() => manualRemove(calendarEditDate, e.userId, e.name)}
+                            >
+                              <X size={10} />
+                            </button>
+                          </span>
+                        ))
+                        : <span className="duty-week-empty">当天暂无值日</span>}
+                    </div>
+                    <div className="duty-cal-editor-row">
+                      <select className="date-input" value={calendarAddId} onChange={e => setCalendarAddId(e.target.value)}>
+                        <option value="">添加成员...</option>
+                        {calendarEditAvailable.map(u => (
+                          <option key={u.id} value={u.id}>{u.name}</option>
+                        ))}
+                      </select>
+                      <button
+                        className="btn-primary btn-sm"
+                        disabled={!calendarAddId}
+                        onClick={() => {
+                          if (!calendarAddId) return
+                          manualAdd(calendarEditDate, calendarAddId)
+                          setCalendarAddId('')
+                        }}
+                      >
+                        <Plus size={12} />
+                      </button>
+                    </div>
+                  </>
+                )}
+              </div>
+            )}
           </div>
         </div>
 
@@ -297,47 +352,15 @@ export default function DutyPage() {
                     <div className="duty-week-members">
                       {row.entries.length ? (
                         <div className="duty-week-tags">
-                          {row.entries.map(e => <span key={e.userId} className="duty-week-tag">{e.name}</span>)}
+                          {row.entries.slice(0, 4).map(e => <span key={e.userId} className="duty-week-tag">{e.name}</span>)}
+                          {row.entries.length > 4 && <span className="duty-week-more">+{row.entries.length - 4}</span>}
                         </div>
                       ) : '无人值日'}
                     </div>
-                    {isAdmin && <button className="btn-preset" type="button" onClick={() => { setWeekEditDate(row.date); setWeekAddId('') }}>编辑</button>}
                   </div>
                 )
               })}
             </div>
-            {isAdmin && (
-              <div className="duty-week-edit">
-                <div className="duty-week-edit-title">{weekEditDate ? `${weekEditDate} 编辑` : '选择一行后编辑值日'}</div>
-                {weekEditDate && (
-                  <>
-                    <div className="duty-week-tags">
-                      {weekEditEntries.length
-                        ? weekEditEntries.map(e => (
-                          <span key={e.userId} className="duty-week-tag">
-                            {e.name}
-                            <button type="button" className="duty-week-tag-remove" onClick={() => manualRemove(weekEditDate, e.userId, e.name)}>
-                              <X size={10} />
-                            </button>
-                          </span>
-                        ))
-                        : <span className="duty-week-empty">当天暂无值日</span>}
-                    </div>
-                    <div className="duty-week-edit-row">
-                      <select className="date-input" value={weekAddId} onChange={e => setWeekAddId(e.target.value)}>
-                        <option value="">添加成员...</option>
-                        {weekEditAvailable.map(u => (
-                          <option key={u.id} value={u.id}>{u.name}</option>
-                        ))}
-                      </select>
-                      <button className="btn-primary btn-sm" disabled={!weekAddId} onClick={() => weekAddId && manualAdd(weekEditDate, weekAddId)}>
-                        <Plus size={12} />
-                      </button>
-                    </div>
-                  </>
-                )}
-              </div>
-            )}
           </div>
         </aside>
       </div>
