@@ -66,23 +66,10 @@ export default function DutyPage() {
   const [generating, setGenerating] = useState(false)
   const [stats, setStats] = useState(null)
   const [weekStart, setWeekStart] = useState(() => startOfWeekMonday(new Date()))
-  const [weekAddMap, setWeekAddMap] = useState({})
-
-  // popover
-  const [activeDay, setActiveDay] = useState(null)
-  const [popoverAddId, setPopoverAddId] = useState('')
-  const popoverRef = useRef(null)
+  const [weekEditDate, setWeekEditDate] = useState('')
+  const [weekAddId, setWeekAddId] = useState('')
 
   useEffect(() => { fetchSchedule(); fetchMembers() }, [])
-
-  useEffect(() => {
-    if (!activeDay) return
-    function handle(e) {
-      if (popoverRef.current && !popoverRef.current.contains(e.target)) setActiveDay(null)
-    }
-    document.addEventListener('mousedown', handle)
-    return () => document.removeEventListener('mousedown', handle)
-  }, [activeDay])
 
   async function fetchSchedule() {
     const { data } = await supabase
@@ -223,16 +210,8 @@ export default function DutyPage() {
     if (viewMonth === 11) { setViewYear(y => y + 1); setViewMonth(0) }
     else setViewMonth(m => m + 1)
   }
-  function handleDayClick(date) {
-    if (!isAdmin || !date) return
-    setActiveDay(prev => prev === date ? null : date)
-    setPopoverAddId('')
-  }
-
   const isAdmin = profile?.is_admin
   const availableUsers = allUsers.filter(u => !dutyMembers.some(m => m.user_id === u.id))
-  const activeDayEntries = activeDay ? (scheduleMap[activeDay] || []) : []
-  const activeDayAvailable = allUsers.filter(u => !activeDayEntries.some(e => e.userId === u.id))
   const weekRows = useMemo(() => {
     return Array.from({ length: 7 }, (_, i) => {
       const d = addDaysLocal(weekStart, i)
@@ -244,6 +223,8 @@ export default function DutyPage() {
       }
     })
   }, [weekStart, scheduleMap])
+  const weekEditEntries = weekEditDate ? (scheduleMap[weekEditDate] || []) : []
+  const weekEditAvailable = allUsers.filter(u => !weekEditEntries.some(e => e.userId === u.id))
 
   return (
     <div className="page">
@@ -275,18 +256,13 @@ export default function DutyPage() {
                 const entries = cell.date ? (scheduleMap[cell.date] || []) : []
                 const isToday = cell.date === today
                 const isMine = entries.some(e => e.userId === profile?.id)
-                const isActive = cell.date === activeDay
                 const cls = ['duty-day',
                   cell.otherMonth && 'other-month',
                   isToday && 'today',
                   isMine && 'mine',
-                  isAdmin && !cell.otherMonth && 'clickable',
-                  isActive && 'active',
                 ].filter(Boolean).join(' ')
                 return (
-                  <div key={i} className={cls} style={{ position: 'relative' }}
-                    onClick={() => handleDayClick(cell.date)}
-                  >
+                  <div key={i} className={cls}>
                     <span className="duty-day-num">{cell.day}</span>
                     {entries.length > 0 && (
                       <div className="duty-names">
@@ -295,46 +271,11 @@ export default function DutyPage() {
                         ))}
                       </div>
                     )}
-                    {isActive && isAdmin && (
-                      <div className="duty-day-popover" ref={popoverRef} onClick={e => e.stopPropagation()}>
-                        <div className="duty-popover-title">
-                          {activeDay} 值日
-                          <button className="btn-icon" onClick={() => setActiveDay(null)}><X size={12} /></button>
-                        </div>
-                        {activeDayEntries.length > 0 ? (
-                          <div className="duty-popover-list">
-                            {activeDayEntries.map(e => (
-                              <div key={e.userId} className="duty-popover-item">
-                                <span>{e.name}</span>
-                                <button className="btn-danger-sm" onClick={() => manualRemove(activeDay, e.userId, e.name)}>
-                                  <X size={11} />
-                                </button>
-                              </div>
-                            ))}
-                          </div>
-                        ) : (
-                          <div className="duty-popover-empty">无人值日</div>
-                        )}
-                        <div className="duty-popover-add">
-                          <select className="date-input" value={popoverAddId} onChange={e => setPopoverAddId(e.target.value)}>
-                            <option value="">添加成员...</option>
-                            {activeDayAvailable.map(u => (
-                              <option key={u.id} value={u.id}>{u.name}</option>
-                            ))}
-                          </select>
-                          <button className="btn-primary btn-sm" disabled={!popoverAddId}
-                            onClick={() => popoverAddId && manualAdd(activeDay, popoverAddId)}
-                          >
-                            <Plus size={12} />
-                          </button>
-                        </div>
-                      </div>
-                    )}
                   </div>
                 )
               })}
             </div>
-            {isAdmin && <div className="duty-cal-hint">点击日期可手动指派/取消值日</div>}
+            {isAdmin && <div className="duty-cal-hint">排班编辑请在右侧“一周值日便签”中操作</div>}
           </div>
         </div>
 
@@ -350,8 +291,6 @@ export default function DutyPage() {
             </div>
             <div className="duty-week-list">
               {weekRows.map(row => {
-                const rowAvailable = allUsers.filter(u => !row.entries.some(e => e.userId === u.id))
-                const addUserId = weekAddMap[row.date] || ''
                 return (
                   <div key={row.date} className={`duty-week-row${row.date === today ? ' today' : ''}`}>
                     <div className="duty-week-day">{row.label}</div>
@@ -359,52 +298,47 @@ export default function DutyPage() {
                     <div className="duty-week-members">
                       {row.entries.length ? (
                         <div className="duty-week-tags">
-                          {row.entries.map(e => (
-                            <span key={e.userId} className="duty-week-tag">
-                              {e.name}
-                              {isAdmin && (
-                                <button
-                                  type="button"
-                                  className="duty-week-tag-remove"
-                                  onClick={() => manualRemove(row.date, e.userId, e.name)}
-                                >
-                                  <X size={10} />
-                                </button>
-                              )}
-                            </span>
-                          ))}
+                          {row.entries.map(e => <span key={e.userId} className="duty-week-tag">{e.name}</span>)}
                         </div>
                       ) : '无人值日'}
                     </div>
-                    {isAdmin && (
-                      <div className="duty-week-edit">
-                        <select
-                          className="date-input"
-                          value={addUserId}
-                          onChange={e => setWeekAddMap(prev => ({ ...prev, [row.date]: e.target.value }))}
-                        >
-                          <option value="">添加成员...</option>
-                          {rowAvailable.map(u => (
-                            <option key={u.id} value={u.id}>{u.name}</option>
-                          ))}
-                        </select>
-                        <button
-                          className="btn-primary btn-sm"
-                          disabled={!addUserId}
-                          onClick={() => {
-                            if (!addUserId) return
-                            manualAdd(row.date, addUserId)
-                            setWeekAddMap(prev => ({ ...prev, [row.date]: '' }))
-                          }}
-                        >
-                          <Plus size={12} />
-                        </button>
-                      </div>
-                    )}
+                    {isAdmin && <button className="btn-preset" type="button" onClick={() => { setWeekEditDate(row.date); setWeekAddId('') }}>编辑</button>}
                   </div>
                 )
               })}
             </div>
+            {isAdmin && (
+              <div className="duty-week-edit">
+                <div className="duty-week-edit-title">{weekEditDate ? `${weekEditDate} 编辑` : '选择一行后编辑值日'}</div>
+                {weekEditDate && (
+                  <>
+                    <div className="duty-week-tags">
+                      {weekEditEntries.length
+                        ? weekEditEntries.map(e => (
+                          <span key={e.userId} className="duty-week-tag">
+                            {e.name}
+                            <button type="button" className="duty-week-tag-remove" onClick={() => manualRemove(weekEditDate, e.userId, e.name)}>
+                              <X size={10} />
+                            </button>
+                          </span>
+                        ))
+                        : <span className="duty-week-empty">当天暂无值日</span>}
+                    </div>
+                    <div className="duty-week-edit-row">
+                      <select className="date-input" value={weekAddId} onChange={e => setWeekAddId(e.target.value)}>
+                        <option value="">添加成员...</option>
+                        {weekEditAvailable.map(u => (
+                          <option key={u.id} value={u.id}>{u.name}</option>
+                        ))}
+                      </select>
+                      <button className="btn-primary btn-sm" disabled={!weekAddId} onClick={() => weekAddId && manualAdd(weekEditDate, weekAddId)}>
+                        <Plus size={12} />
+                      </button>
+                    </div>
+                  </>
+                )}
+              </div>
+            )}
           </div>
         </aside>
       </div>
