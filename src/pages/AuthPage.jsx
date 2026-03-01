@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { supabase } from '../lib/supabase'
 import { currentGrades, GENDER_OPTIONS } from '../lib/constants'
-import { Terminal, LogIn, UserPlus, KeyRound } from 'lucide-react'
+import { Terminal, LogIn, UserPlus, KeyRound, Image as ImageIcon } from 'lucide-react'
 
 const GRADES = currentGrades()
 const REMEMBER_KEY = 'lab304_remember_email'
@@ -70,6 +70,7 @@ export default function AuthPage() {
   const [error, setError] = useState('')
   const [registered, setRegistered] = useState(false)
   const [resetSent, setResetSent] = useState(false)
+  const [logoBroken, setLogoBroken] = useState(false)
   const runtimeRedirectUrl = window.location.origin + import.meta.env.BASE_URL
   const envRedirectUrl = (import.meta.env.VITE_AUTH_REDIRECT_URL || '').trim()
   const authRedirectUrl = (() => {
@@ -184,11 +185,24 @@ export default function AuthPage() {
       <DigitalRain canvasRef={canvasRef} />
       <div className="auth-card" ref={authCardRef}>
         <div className="auth-header">
-          <div className="auth-logo">
-            <Terminal size={30} />
+          <div className="auth-logo auth-logo-brand">
+            {!logoBroken ? (
+              <img
+                src={`${import.meta.env.BASE_URL}log.jpg`}
+                alt="计算机协会"
+                className="auth-logo-image"
+                onError={() => setLogoBroken(true)}
+              />
+            ) : (
+              <ImageIcon size={28} />
+            )}
           </div>
           <h1>LAB_304</h1>
           <p>登录 // 预约 // 签到</p>
+          <div className="auth-credit">
+            <Terminal size={13} />
+            <span>计算机协会撰写</span>
+          </div>
         </div>
 
         {mode !== 'forgot' ? (

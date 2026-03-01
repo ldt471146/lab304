@@ -282,6 +282,16 @@ body::after {
   box-shadow: 0 0 20px rgba(0, 212, 255, 0.2), inset 0 0 20px rgba(0, 212, 255, 0.05);
   animation: logoPulse 3s ease-in-out infinite;
 }
+.auth-logo-brand {
+  overflow: hidden;
+  background: rgba(0, 212, 255, 0.08);
+}
+.auth-logo-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
 @keyframes logoPulse {
   0%, 100% { box-shadow: 0 0 20px rgba(0, 212, 255, 0.2), inset 0 0 20px rgba(0, 212, 255, 0.05); }
   50% { box-shadow: 0 0 30px rgba(0, 212, 255, 0.4), inset 0 0 30px rgba(0, 212, 255, 0.1); }
@@ -294,6 +304,17 @@ body::after {
   letter-spacing: 0.05em;
 }
 .auth-header p { color: var(--text-muted); font-size: 0.78rem; }
+.auth-credit {
+  margin-top: 0.5rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.72rem;
+  color: rgba(0, 212, 255, 0.9);
+  border: 1px solid rgba(0, 212, 255, 0.2);
+  border-radius: 999px;
+  padding: 0.18rem 0.55rem;
+}
 
 /* --- Tab Group --- */
 .tab-group {
@@ -1933,7 +1954,76 @@ body::after {
 }
 .duty-today-card.mine { border-color: rgba(0,255,65,0.3); }
 .duty-you { color: var(--neon-green); font-weight: 600; }
+.duty-jump-btn {
+  margin-top: 0.55rem;
+  padding: 0.28rem 0.6rem;
+  border-radius: var(--radius);
+  border: 1px solid rgba(0, 212, 255, 0.35);
+  background: rgba(0, 212, 255, 0.08);
+  color: var(--neon-cyan);
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.duty-jump-btn:hover {
+  background: rgba(0, 212, 255, 0.14);
+  border-color: rgba(0, 212, 255, 0.6);
+}
 .led-dim { background: var(--text-muted); opacity: 0.4; }
+
+.duty-week-board {
+  background: var(--bg-card);
+  border: 1px solid var(--border-dim);
+  border-radius: var(--radius-lg);
+  padding: 1rem;
+  margin-bottom: 1.25rem;
+}
+.duty-week-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 0.65rem;
+}
+.duty-week-header .section-title { margin-bottom: 0; }
+.duty-week-actions {
+  display: flex;
+  gap: 0.4rem;
+}
+.duty-week-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+.duty-week-row {
+  display: grid;
+  grid-template-columns: 56px 118px minmax(0, 1fr);
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.45rem 0.6rem;
+  border: 1px solid var(--border-dim);
+  border-radius: var(--radius);
+  background: var(--bg-panel);
+}
+.duty-week-row.today {
+  border-color: rgba(0, 212, 255, 0.45);
+  background: rgba(0, 212, 255, 0.08);
+}
+.duty-week-day {
+  color: var(--text-bright);
+  font-size: 0.76rem;
+  font-weight: 600;
+}
+.duty-week-date {
+  color: var(--text-muted);
+  font-size: 0.72rem;
+  font-family: var(--font-mono);
+}
+.duty-week-members {
+  color: var(--text);
+  font-size: 0.75rem;
+}
 
 /* Mobile: duty */
 @media (max-width: 768px) {
@@ -1945,6 +2035,20 @@ body::after {
   .duty-add-row { flex-direction: column; align-items: stretch; }
   .duty-add-row .datepicker-wrap { min-width: unset; }
   .duty-gen-row { grid-template-columns: 1fr 1fr; }
+  .duty-week-board { padding: 0.75rem; }
+  .duty-week-header { flex-direction: column; align-items: stretch; }
+  .duty-week-actions { width: 100%; }
+  .duty-week-actions .btn-preset { flex: 1; }
+  .duty-week-row {
+    grid-template-columns: 56px 1fr;
+    grid-template-areas:
+      "day date"
+      "members members";
+    gap: 0.3rem 0.55rem;
+  }
+  .duty-week-day { grid-area: day; }
+  .duty-week-date { grid-area: date; }
+  .duty-week-members { grid-area: members; }
 
   /* Popover → bottom drawer on mobile */
   .duty-day-popover {
@@ -1952,7 +2056,8 @@ body::after {
     transform: none; min-width: unset; width: 100%;
     border-radius: var(--radius-lg) var(--radius-lg) 0 0;
     padding: 1rem 1.25rem 1.5rem;
-    box-shadow: 0 -4px 20px rgba(0,0,0,0.5);
+    box-shadow: none;
+    border-top: 1px solid var(--border-glow);
     z-index: 200;
   }
   .duty-popover-title { font-size: 0.82rem; }
@@ -1966,7 +2071,8 @@ body::after {
     min-width: unset; width: 100%;
     border-radius: var(--radius-lg) var(--radius-lg) 0 0;
     padding: 1rem;
-    box-shadow: 0 -4px 20px rgba(0,0,0,0.5);
+    box-shadow: none;
+    border-top: 1px solid var(--border-glow);
     z-index: 200;
   }
   .datepicker-grid { justify-items: center; }

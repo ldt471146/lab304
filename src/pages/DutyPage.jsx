@@ -7,6 +7,7 @@ import DatePicker from '../components/DatePicker'
 import { CalendarClock, ChevronLeft, ChevronRight, UserPlus, Trash2, Wand2, BarChart3, X, Plus, Check } from 'lucide-react'
 
 const WEEKDAYS = ['日', '一', '二', '三', '四', '五', '六']
+const WEEKDAY_LABELS = ['周一', '周二', '周三', '周四', '周五', '周六', '周日']
 
 function fmtDate(y, m, d) {
   return `${y}-${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')}`
@@ -16,6 +17,19 @@ function monthRange(year, month) {
   const first = new Date(year, month, 1)
   const last = new Date(year, month + 1, 0)
   return { daysInMonth: last.getDate(), startDow: first.getDay() }
+}
+
+function startOfWeekMonday(baseDate = new Date()) {
+  const d = new Date(baseDate.getFullYear(), baseDate.getMonth(), baseDate.getDate())
+  const day = (d.getDay() + 6) % 7
+  d.setDate(d.getDate() - day)
+  return d
+}
+
+function addDaysLocal(baseDate, days) {
+  const d = new Date(baseDate.getFullYear(), baseDate.getMonth(), baseDate.getDate())
+  d.setDate(d.getDate() + days)
+  return d
 }
 
 // toast auto-clear
@@ -51,6 +65,7 @@ export default function DutyPage() {
   const [maxPerDay, setMaxPerDay] = useState(2)
   const [generating, setGenerating] = useState(false)
   const [stats, setStats] = useState(null)
+  const [weekStart, setWeekStart] = useState(() => startOfWeekMonday(new Date()))
 
   // popover
   const [activeDay, setActiveDay] = useState(null)
@@ -217,6 +232,17 @@ export default function DutyPage() {
   const availableUsers = allUsers.filter(u => !dutyMembers.some(m => m.user_id === u.id))
   const activeDayEntries = activeDay ? (scheduleMap[activeDay] || []) : []
   const activeDayAvailable = allUsers.filter(u => !activeDayEntries.some(e => e.userId === u.id))
+  const weekRows = useMemo(() => {
+    return Array.from({ length: 7 }, (_, i) => {
+      const d = addDaysLocal(weekStart, i)
+      const date = fmtDate(d.getFullYear(), d.getMonth() + 1, d.getDate())
+      return {
+        date,
+        label: WEEKDAY_LABELS[i],
+        entries: scheduleMap[date] || [],
+      }
+    })
+  }, [weekStart, scheduleMap])
 
   return (
     <div className="page">
@@ -306,6 +332,28 @@ export default function DutyPage() {
           })}
         </div>
         {isAdmin && <div className="duty-cal-hint">点击日期可手动指派/取消值日</div>}
+      </div>
+
+      <div className="duty-week-board">
+        <div className="duty-week-header">
+          <div className="section-title"><CalendarClock size={16} /> 一周值日表</div>
+          <div className="duty-week-actions">
+            <button className="btn-preset" onClick={() => setWeekStart(w => addDaysLocal(w, -7))}>上一周</button>
+            <button className="btn-preset" onClick={() => setWeekStart(startOfWeekMonday(new Date()))}>本周</button>
+            <button className="btn-preset" onClick={() => setWeekStart(w => addDaysLocal(w, 7))}>下一周</button>
+          </div>
+        </div>
+        <div className="duty-week-list">
+          {weekRows.map(row => (
+            <div key={row.date} className={`duty-week-row${row.date === today ? ' today' : ''}`}>
+              <div className="duty-week-day">{row.label}</div>
+              <div className="duty-week-date">{row.date}</div>
+              <div className="duty-week-members">
+                {row.entries.length ? row.entries.map(e => e.name).join('、') : '无人值日'}
+              </div>
+            </div>
+          ))}
+        </div>
       </div>
 
       {/* Admin */}

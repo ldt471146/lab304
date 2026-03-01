@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
 import { SLOT_TEXT, getLocalDate, formatMinutes, formatPoints } from '../lib/constants'
@@ -65,6 +66,7 @@ function downloadExcel(rows, filename, sheetName = '签到记录') {
 
 export default function Dashboard() {
   const { profile } = useAuth()
+  const navigate = useNavigate()
   const [todayCheckins, setTodayCheckins] = useState([])
   const [myReservations, setMyReservations] = useState([])
   const [myRank, setMyRank] = useState(null)
@@ -319,6 +321,9 @@ export default function Dashboard() {
                 </>
               : '今日无人值日'}
           </div>
+          <button type="button" className="duty-jump-btn" onClick={() => navigate('/duty')}>
+            查看值日表
+          </button>
         </div>
       </div>
 
