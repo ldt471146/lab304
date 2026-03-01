@@ -4,6 +4,7 @@ import { ThemeProvider } from './context/ThemeContext'
 import AuthPage from './pages/AuthPage'
 import ResetPasswordPage from './pages/ResetPasswordPage'
 import SetupProfile from './pages/SetupProfile'
+import PendingApprovalPage from './pages/PendingApprovalPage'
 import Dashboard from './pages/Dashboard'
 import CheckinPage from './pages/CheckinPage'
 import ReservePage from './pages/ReservePage'
@@ -25,6 +26,7 @@ function AppRoutes() {
   if (passwordRecovery) return <ResetPasswordPage />
   if (!session) return <AuthPage />
   if (profile === null) return <SetupProfile />
+  if (profile.approval_status !== 'approved') return <PendingApprovalPage status={profile.approval_status} />
   return (
     <div className="app-layout">
       <NavBar />

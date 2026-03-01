@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
 import { formatMinutes, formatPoints, AVATAR_FALLBACK } from '../lib/constants'
-import { Users, Search, Clock, Star, Trash2, X } from 'lucide-react'
+import { Users, Search, Clock, Star, Trash2, X, Check, Ban } from 'lucide-react'
 
 export default function AdminUsersPage() {
   const { profile } = useAuth()
@@ -22,7 +22,7 @@ export default function AdminUsersPage() {
     if (!profile?.is_admin) return
     supabase
       .from('users')
-      .select('id, name, student_id, grade, points, total_minutes, created_at, avatar_url, email')
+      .select('id, name, student_id, grade, points, total_minutes, created_at, avatar_url, email, approval_status')
       .order('created_at', { ascending: false })
       .then(({ data }) => { setUsers(data || []); setLoading(false) })
   }, [profile])
@@ -44,6 +44,24 @@ export default function AdminUsersPage() {
       setUsers(prev => prev.filter(u => u.id !== confirmUser.id))
       setConfirmUser(null)
     }
+  }
+
+  async function handleApprove(userId) {
+    const { error } = await supabase.rpc('admin_approve_user', { target_user_id: userId })
+    if (error) {
+      alert('审核通过失败：' + error.message)
+      return
+    }
+    setUsers(prev => prev.map(u => (u.id === userId ? { ...u, approval_status: 'approved' } : u)))
+  }
+
+  async function handleReject(userId) {
+    const { error } = await supabase.rpc('admin_reject_user', { target_user_id: userId })
+    if (error) {
+      alert('驳回失败：' + error.message)
+      return
+    }
+    setUsers(prev => prev.map(u => (u.id === userId ? { ...u, approval_status: 'rejected' } : u)))
   }
 
   return (
@@ -75,7 +93,9 @@ export default function AdminUsersPage() {
               />
               <div className="au-info">
                 <span className="au-name">{u.name}</span>
-                <span className="au-meta">{u.grade}级 // {u.student_id} // {u.email || '--'}</span>
+                <span className="au-meta">
+                  {u.grade}级 // {u.student_id} // {u.email || '--'} // {u.approval_status === 'approved' ? '已通过' : u.approval_status === 'rejected' ? '已驳回' : '待审核'}
+                </span>
               </div>
               <div className="au-stats">
                 <span className="au-stat"><Star size={12} />{formatPoints(u.points)}</span>
@@ -85,6 +105,16 @@ export default function AdminUsersPage() {
               {u.id !== profile.id && (
                 <button className="au-del-btn" onClick={() => setConfirmUser(u)} title="删除用户">
                   <Trash2 size={14} />
+                </button>
+              )}
+              {u.id !== profile.id && u.approval_status !== 'approved' && (
+                <button className="au-del-btn" onClick={() => handleApprove(u.id)} title="审核通过">
+                  <Check size={14} />
+                </button>
+              )}
+              {u.id !== profile.id && u.approval_status === 'pending' && (
+                <button className="au-del-btn" onClick={() => handleReject(u.id)} title="驳回申请">
+                  <Ban size={14} />
                 </button>
               )}
             </div>

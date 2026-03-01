@@ -197,7 +197,7 @@ export default function AuthPage() {
         )}
 
         {registered && (
-          <div className="success-msg">注册成功，请查收邮件完成验证。</div>
+          <div className="success-msg">申请已提交，请先查收邮件完成验证，随后等待管理员审核通过。</div>
         )}
 
         {resetSent && (

@@ -56,7 +56,10 @@ export function AuthProvider({ children }) {
           'getSession'
         )
         setSession(session)
-        if (session) await fetchProfile(session.user.id)
+        if (session) {
+          setProfile(undefined)
+          await fetchOrCreateProfile(session.user)
+        }
         else setProfile(null)
       } catch (e) {
         console.error('hydrate session failed:', e?.message || e)
@@ -74,11 +77,64 @@ export function AuthProvider({ children }) {
         setPasswordRecovery(true)
       }
       setSession(session)
-      if (session) fetchProfile(session.user.id)
+      if (session) {
+        setProfile(undefined)
+        fetchOrCreateProfile(session.user)
+      }
       else setProfile(null)
     })
     return () => subscription.unsubscribe()
   }, [])
+
+  async function fetchOrCreateProfile(user) {
+    const existing = await queryProfile(user.id)
+    if (existing) {
+      setProfile(existing)
+      return existing
+    }
+
+    const meta = user?.user_metadata || {}
+    if (!meta.student_id || !meta.name || !meta.grade) {
+      setProfile(null)
+      return null
+    }
+
+    const { error } = await supabase.from('users').insert({
+      id: user.id,
+      student_id: meta.student_id,
+      name: meta.name,
+      grade: meta.grade,
+      approval_status: 'pending',
+    })
+    if (error) {
+      console.error('createProfile failed:', error.message)
+      setProfile(null)
+      return null
+    }
+    return fetchProfile(user.id)
+  }
+
+  async function queryProfile(userId) {
+    try {
+      const { data, error } = await withTimeout(
+        supabase
+          .from('users')
+          .select('*')
+          .eq('id', userId)
+          .maybeSingle(),
+        PROFILE_TIMEOUT_MS,
+        'queryProfile'
+      )
+      if (error) {
+        console.error('queryProfile:', error.message)
+        return null
+      }
+      return data
+    } catch (e) {
+      console.error('queryProfile failed:', e?.message || e)
+      return null
+    }
+  }
 
   async function fetchProfile(userId) {
     try {
@@ -92,10 +148,13 @@ export function AuthProvider({ children }) {
         'fetchProfile'
       )
       if (error) console.error('fetchProfile:', error.message)
-      setProfile(error ? null : data)
+      const next = error ? null : data
+      setProfile(next)
+      return next
     } catch (e) {
       console.error('fetchProfile failed:', e?.message || e)
       setProfile(null)
+      return null
     }
   }
 
