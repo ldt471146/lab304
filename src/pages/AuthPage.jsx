@@ -69,6 +69,14 @@ export default function AuthPage() {
 
   const set = (k, v) => setForm(f => ({ ...f, [k]: v }))
 
+  function friendlyError(msg) {
+    if (/rate limit/i.test(msg)) return '操作过于频繁，请稍后再试'
+    if (/invalid login/i.test(msg)) return '邮箱或密码错误'
+    if (/already registered/i.test(msg)) return '该邮箱已注册'
+    if (/password.*short/i.test(msg)) return '密码至少 6 位'
+    return msg
+  }
+
   function switchMode(m) { setMode(m); setError(''); setResetSent(false) }
 
   async function handleLogin(e) {
@@ -151,7 +159,7 @@ export default function AuthPage() {
               <label>邮箱</label>
               <input type="email" placeholder="请输入注册邮箱" value={form.email} onChange={e => set('email', e.target.value)} required />
             </div>
-            {error && <div className="error-msg">错误: {error}</div>}
+            {error && <div className="error-msg">{friendlyError(error)}</div>}
             <button type="submit" className="btn-primary" disabled={loading || resetSent}>
               {loading ? '处理中...' : resetSent ? '已发送' : '> 发送重置邮件'}
             </button>
@@ -198,7 +206,7 @@ export default function AuthPage() {
                 </div>
               </>
             )}
-            {error && <div className="error-msg">错误: {error}</div>}
+            {error && <div className="error-msg">{friendlyError(error)}</div>}
             <button type="submit" className="btn-primary" disabled={loading}>
               {loading ? '处理中...' : mode === 'login' ? '> 登录' : '> 注册'}
             </button>

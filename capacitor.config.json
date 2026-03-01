@@ -1,0 +1,9 @@
+{
+  "appId": "com.lab304.app",
+  "appName": "LAB 304",
+  "webDir": "dist",
+  "server": {
+    "url": "https://ldt471146.github.io/lab304/",
+    "cleartext": true
+  }
+}
