@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo, useRef, useCallback } from 'react'
+import { useEffect, useState, useMemo, useCallback } from 'react'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
 import { getLocalDate } from '../lib/constants'
@@ -176,7 +176,6 @@ export default function DutyPage() {
       duty_date: date, user_id: userId, created_by: profile.id,
     })
     if (error) { showToast('error', error.message); return }
-    setPopoverAddId('')
     showToast('success', `${date} 已添加 ${name}`)
     fetchSchedule()
   }
