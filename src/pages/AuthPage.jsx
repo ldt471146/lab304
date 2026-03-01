@@ -107,7 +107,6 @@ export default function AuthPage() {
   }, [])
 
   function friendlyError(msg) {
-    if (/rate limit/i.test(msg)) return '操作过于频繁，请稍后再试'
     if (/invalid login/i.test(msg)) return '邮箱或密码错误'
     if (/already registered/i.test(msg)) return '该邮箱已注册'
     if (/password.*short/i.test(msg)) return '密码至少 6 位'
