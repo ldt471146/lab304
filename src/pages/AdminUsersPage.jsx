@@ -38,7 +38,7 @@ export default function AdminUsersPage() {
     if (!profile?.is_admin) return
     supabase
       .from('users')
-      .select('id, name, student_id, grade, points, total_minutes, created_at, avatar_url, id_photo_url, email, approval_status, gender, class_name, phone')
+      .select('id, name, student_id, grade, points, total_minutes, created_at, avatar_url, id_photo_url, email, approval_status, gender, class_name, phone, reservation_strikes, reservation_restricted_until')
       .order('created_at', { ascending: false })
       .then(({ data }) => { setUsers(data || []); setLoading(false) })
   }, [profile])
@@ -158,6 +158,13 @@ export default function AdminUsersPage() {
       })
     }
     setRuleMsg({ type: 'success', text: '连续预约规则已更新' })
+  }
+
+  function formatRestrictDate(v) {
+    if (!v) return '--'
+    const d = new Date(v)
+    if (Number.isNaN(d.getTime())) return v
+    return d.toLocaleDateString('zh-CN')
   }
 
   return (
@@ -299,7 +306,12 @@ export default function AdminUsersPage() {
               <div className="au-stats">
                 <span className="au-stat"><Star size={12} />{formatPoints(u.points)}</span>
                 <span className="au-stat"><Clock size={12} />{formatMinutes(u.total_minutes)}</span>
+                <span className={`au-stat ${Number(u.reservation_strikes || 0) > 0 ? 'warn' : ''}`}>
+                  <Ban size={12} />
+                  标记{Number(u.reservation_strikes || 0)}
+                </span>
               </div>
+              <span className="au-date">{u.reservation_restricted_until ? `限制至 ${formatRestrictDate(u.reservation_restricted_until)}` : '未限制'}</span>
               <span className="au-date">{new Date(u.created_at).toLocaleDateString('zh-CN')}</span>
               <button className="au-del-btn" onClick={() => setViewUser(u)} title="查看资料">
                 <Eye size={14} />
@@ -374,6 +386,8 @@ export default function AdminUsersPage() {
                 <div><b>班级</b>：{viewUser.class_name || '--'}</div>
                 <div><b>邮箱</b>：{viewUser.email || '--'}</div>
                 <div><b>联系电话</b>：{viewUser.phone || '--'}</div>
+                <div><b>标记次数</b>：{Number(viewUser.reservation_strikes || 0)}</div>
+                <div><b>限制到期</b>：{formatRestrictDate(viewUser.reservation_restricted_until)}</div>
               </div>
             </div>
           </div>

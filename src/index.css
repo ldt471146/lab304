@@ -1658,6 +1658,7 @@ body::after {
   font-variant-numeric: tabular-nums;
 }
 .au-stat:first-child { color: var(--neon-yellow); }
+.au-stat.warn { color: var(--neon-red); }
 .au-date {
   font-size: 0.68rem;
   color: var(--text-muted);
