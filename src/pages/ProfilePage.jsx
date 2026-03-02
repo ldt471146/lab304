@@ -17,6 +17,13 @@ export default function ProfilePage() {
 
   if (!profile) return <div className="loading">加载中...</div>
 
+  function formatRestrictDate(v) {
+    if (!v) return '--'
+    const d = new Date(v)
+    if (Number.isNaN(d.getTime())) return v
+    return d.toLocaleDateString('zh-CN')
+  }
+
   async function handleAvatarUpload(e) {
     const file = e.target.files?.[0]
     if (!file) return
@@ -173,6 +180,14 @@ export default function ProfilePage() {
               <div className="profile-field">
                 <span className="profile-field-label">联系电话</span>
                 <span className="profile-field-value">{profile.phone || '--'}</span>
+              </div>
+              <div className="profile-field">
+                <span className="profile-field-label">我的标记次数</span>
+                <span className="profile-field-value">{Number(profile.reservation_strikes || 0)} 次</span>
+              </div>
+              <div className="profile-field">
+                <span className="profile-field-label">限制到期</span>
+                <span className="profile-field-value">{formatRestrictDate(profile.reservation_restricted_until)}</span>
               </div>
               <div className="profile-field profile-field-photo">
                 <span className="profile-field-label">个人照片</span>
