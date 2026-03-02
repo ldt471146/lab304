@@ -205,14 +205,18 @@ export default function ReservePage() {
           className="date-input"
         />
         {reserveMode === 'continuous' && (
-          <input
-            className="date-input reserve-days-input"
-            type="number"
-            min={1}
-            max={maxContinuousDays}
-            value={seriesDays}
-            onChange={(e) => setSeriesDays(e.target.value)}
-          />
+          <label className="reserve-days-wrap">
+            <span className="reserve-days-label">连续天数</span>
+            <input
+              className="date-input reserve-days-input"
+              type="number"
+              min={1}
+              max={maxContinuousDays}
+              value={seriesDays}
+              onChange={(e) => setSeriesDays(e.target.value)}
+            />
+            <span className="reserve-days-tip">最多 {maxContinuousDays} 天</span>
+          </label>
         )}
       </div>
       <div className="tab-group reserve-mode-tabs">
