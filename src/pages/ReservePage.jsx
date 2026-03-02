@@ -12,6 +12,9 @@ export default function ReservePage() {
   const [selectedSeat, setSelectedSeat] = useState(null)
   const [occupiedSeatInfo, setOccupiedSeatInfo] = useState(null)
   const [reserveDate, setReserveDate] = useState(getLocalDate)
+  const [reserveMode, setReserveMode] = useState('single')
+  const [seriesDays, setSeriesDays] = useState(3)
+  const [rules, setRules] = useState(null)
   const [loading, setLoading] = useState(false)
   const [msg, setMsg] = useState(null)
 
@@ -23,8 +26,25 @@ export default function ReservePage() {
       }
       return '该座位已被预约'
     }
+    if (raw.includes('限制预约')) return error?.message || '当前账号已被限制预约'
+    if (raw.includes('连续预约最多')) return error?.message || '连续预约天数超过限制'
+    if (raw.includes('关闭连续预约')) return error?.message || '管理员已关闭连续预约'
     return error?.message || '预约失败'
   }
+
+  function formatComplianceText(status) {
+    if (status === 'completed') return '已达标'
+    if (status === 'violated') return '未达标'
+    if (status === 'waived') return '已取消'
+    return '待结算'
+  }
+
+  const today = getLocalDate()
+  const maxContinuousDays = Number(rules?.max_continuous_days || 7)
+  const continuousEnabled = Boolean(rules?.is_enabled ?? true)
+  const isRestricted = Boolean(
+    profile?.reservation_restricted_until && profile.reservation_restricted_until >= today
+  )
 
   const fetchSeats = useCallback(async () => {
     const { data, error } = await supabase.from('seats')
@@ -55,17 +75,34 @@ export default function ReservePage() {
 
   const fetchMyReservations = useCallback(async () => {
     if (!profile) return
-    const { data, error } = await supabase.from('reservations').select('*, seats(seat_number)')
-      .eq('user_id', profile.id).eq('status', 'active').gte('reserve_date', getLocalDate())
+    const { data, error } = await supabase.from('reservations')
+      .select('id, seat_id, reserve_date, status, series_id, compliance_status, seats(seat_number)')
+      .eq('user_id', profile.id)
+      .eq('status', 'active')
+      .gte('reserve_date', today)
       .order('reserve_date')
     if (error) console.error('fetchMyReservations:', error.message)
     setMyReservations(data || [])
-  }, [profile])
+  }, [profile, today])
+
+  const fetchRules = useCallback(async () => {
+    const { data, error } = await supabase
+      .from('reservation_rules')
+      .select('id, is_enabled, min_study_minutes, max_continuous_days, penalty_points, strike_value, strike_threshold, restrict_days')
+      .eq('id', true)
+      .maybeSingle()
+    if (error) {
+      console.error('fetchRules:', error.message)
+      return
+    }
+    setRules(data || null)
+  }, [])
 
   useEffect(() => {
     fetchSeats()
     fetchMyReservations()
-  }, [fetchSeats, fetchMyReservations])
+    fetchRules()
+  }, [fetchSeats, fetchMyReservations, fetchRules])
 
   useEffect(() => {
     setOccupiedSeatInfo(null)
@@ -73,24 +110,44 @@ export default function ReservePage() {
 
   async function handleReserve() {
     if (!selectedSeat) return
-    const hasSameDayReservation = myReservations.some(r => r.reserve_date === reserveDate && r.status === 'active')
-    if (hasSameDayReservation) {
-      setMsg({ type: 'error', text: '一个人不可以同时预约多个座位' })
+    if (isRestricted) {
+      setMsg({ type: 'error', text: `当前账号已被限制预约，截止到 ${profile?.reservation_restricted_until}` })
       return
     }
-    setLoading(true); setMsg(null)
-    const { error } = await supabase.from('reservations').insert({
-      user_id: profile.id,
-      seat_id: selectedSeat,
-      reserve_date: reserveDate,
-      time_slot: 'allday',
-    })
+    if (reserveMode === 'continuous' && !continuousEnabled) {
+      setMsg({ type: 'error', text: '管理员已关闭连续预约' })
+      return
+    }
+    setLoading(true)
+    setMsg(null)
+
+    let error = null
+    let successText = '预约成功'
+    if (reserveMode === 'continuous') {
+      const normalizedDays = Math.max(1, Math.min(maxContinuousDays, Number(seriesDays) || 1))
+      const { error: rpcError } = await supabase.rpc('create_reservation_series', {
+        p_seat_id: selectedSeat,
+        p_start_date: reserveDate,
+        p_days: normalizedDays,
+        p_time_slot: 'allday',
+      })
+      error = rpcError
+      successText = `连续预约成功（${normalizedDays} 天）`
+    } else {
+      const { error: rpcError } = await supabase.rpc('create_reservation_with_rules', {
+        p_seat_id: selectedSeat,
+        p_reserve_date: reserveDate,
+        p_time_slot: 'allday',
+      })
+      error = rpcError
+    }
+
     if (error) {
       setMsg({ type: 'error', text: getReserveErrorText(error) })
     } else {
-      setMsg({ type: 'success', text: '预约成功' })
+      setMsg({ type: 'success', text: successText })
       setSelectedSeat(null)
-      await Promise.all([fetchSeats(), fetchMyReservations()])
+      await Promise.all([fetchSeats(), fetchMyReservations(), fetchProfile(profile.id)])
     }
     setLoading(false)
   }
@@ -118,7 +175,10 @@ export default function ReservePage() {
       }
     }
 
-    const { error } = await supabase.from('reservations').update({ status: 'cancelled' }).eq('id', reservation.id)
+    const { error } = await supabase
+      .from('reservations')
+      .update({ status: 'cancelled', compliance_status: 'waived' })
+      .eq('id', reservation.id)
     if (error) {
       setMsg({ type: 'error', text: error.message })
       return
@@ -140,11 +200,47 @@ export default function ReservePage() {
 
       <div className="reserve-controls">
         <input type="date" value={reserveDate}
-          min={getLocalDate()}
+          min={today}
           onChange={e => { setReserveDate(e.target.value); setSelectedSeat(null); setOccupiedSeatInfo(null) }}
           className="date-input"
         />
+        {reserveMode === 'continuous' && (
+          <input
+            className="date-input reserve-days-input"
+            type="number"
+            min={1}
+            max={maxContinuousDays}
+            value={seriesDays}
+            onChange={(e) => setSeriesDays(e.target.value)}
+          />
+        )}
       </div>
+      <div className="tab-group reserve-mode-tabs">
+        <button
+          className={`tab ${reserveMode === 'single' ? 'active' : ''}`}
+          onClick={() => setReserveMode('single')}
+          type="button"
+        >
+          单日预约
+        </button>
+        <button
+          className={`tab ${reserveMode === 'continuous' ? 'active' : ''}`}
+          onClick={() => setReserveMode('continuous')}
+          type="button"
+        >
+          连续预约
+        </button>
+      </div>
+      {rules && (
+        <div className="reserve-rule-hint">
+          每日达标 {rules.min_study_minutes} 分钟 // 连续最多 {rules.max_continuous_days} 天 // 未达标扣 {rules.penalty_points} 分并记 {rules.strike_value} 次
+        </div>
+      )}
+      {isRestricted && (
+        <div className="msg error">
+          当前账号已被限制预约，截止到 {profile?.reservation_restricted_until}
+        </div>
+      )}
 
       <div className="section-title">选择座位</div>
       <ZoneSeatMap
@@ -184,8 +280,12 @@ export default function ReservePage() {
         </div>
       )}
       {msg && <div className={`msg ${msg.type}`}>{msg.text}</div>}
-      <button className="btn-primary" onClick={handleReserve} disabled={loading || !selectedSeat}>
-        {loading ? '处理中...' : '> 确认预约'}
+      <button
+        className="btn-primary"
+        onClick={handleReserve}
+        disabled={loading || !selectedSeat || isRestricted || (reserveMode === 'continuous' && !continuousEnabled)}
+      >
+        {loading ? '处理中...' : (reserveMode === 'continuous' ? '> 确认连续预约' : '> 确认预约')}
       </button>
 
       {myReservations.length > 0 && (
@@ -196,6 +296,8 @@ export default function ReservePage() {
               <div key={r.id} className="reservation-item">
                 <span className="seat-tag">{r.seats?.seat_number}</span>
                 <span>{r.reserve_date}</span>
+                {r.series_id && <span className="seat-tag">连约</span>}
+                <span>{formatComplianceText(r.compliance_status)}</span>
                 <button className="icon-btn danger" onClick={() => handleCancel(r)}>
                   <Trash2 size={14} />
                 </button>

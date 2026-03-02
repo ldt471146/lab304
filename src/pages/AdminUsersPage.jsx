@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
 import { formatMinutes, formatPoints, AVATAR_FALLBACK, formatGender } from '../lib/constants'
-import { Users, Search, Clock, Star, Trash2, X, Check, Ban, Eye } from 'lucide-react'
+import { Users, Search, Clock, Star, Trash2, X, Check, Ban, Eye, SlidersHorizontal } from 'lucide-react'
 
 export default function AdminUsersPage() {
   const PAGE_SIZE = 10
@@ -17,6 +17,18 @@ export default function AdminUsersPage() {
   const [viewUser, setViewUser] = useState(null)
   const [deleting, setDeleting] = useState(false)
   const [page, setPage] = useState(1)
+  const [ruleForm, setRuleForm] = useState({
+    is_enabled: true,
+    min_study_minutes: 90,
+    max_continuous_days: 7,
+    penalty_points: 1.5,
+    strike_value: 1,
+    strike_threshold: 3,
+    restrict_days: 7,
+  })
+  const [ruleLoading, setRuleLoading] = useState(true)
+  const [ruleSaving, setRuleSaving] = useState(false)
+  const [ruleMsg, setRuleMsg] = useState(null)
 
   useEffect(() => {
     if (profile && !profile.is_admin) navigate('/', { replace: true })
@@ -29,6 +41,29 @@ export default function AdminUsersPage() {
       .select('id, name, student_id, grade, points, total_minutes, created_at, avatar_url, id_photo_url, email, approval_status, gender, class_name, phone')
       .order('created_at', { ascending: false })
       .then(({ data }) => { setUsers(data || []); setLoading(false) })
+  }, [profile])
+
+  useEffect(() => {
+    if (!profile?.is_admin) return
+    supabase
+      .from('reservation_rules')
+      .select('id, is_enabled, min_study_minutes, max_continuous_days, penalty_points, strike_value, strike_threshold, restrict_days')
+      .eq('id', true)
+      .maybeSingle()
+      .then(({ data, error }) => {
+        if (!error && data) {
+          setRuleForm({
+            is_enabled: Boolean(data.is_enabled),
+            min_study_minutes: Number(data.min_study_minutes ?? 90),
+            max_continuous_days: Number(data.max_continuous_days ?? 7),
+            penalty_points: Number(data.penalty_points ?? 1.5),
+            strike_value: Number(data.strike_value ?? 1),
+            strike_threshold: Number(data.strike_threshold ?? 3),
+            restrict_days: Number(data.restrict_days ?? 7),
+          })
+        }
+        setRuleLoading(false)
+      })
   }, [profile])
 
   if (!profile?.is_admin) return null
@@ -89,12 +124,136 @@ export default function AdminUsersPage() {
     setUsers(prev => prev.map(u => (u.id === userId ? { ...u, approval_status: 'rejected' } : u)))
   }
 
+  function updateRuleField(key, value) {
+    setRuleForm(prev => ({ ...prev, [key]: value }))
+  }
+
+  async function handleSaveRules() {
+    setRuleSaving(true)
+    setRuleMsg(null)
+    const payload = {
+      p_is_enabled: Boolean(ruleForm.is_enabled),
+      p_min_study_minutes: Math.max(0, Math.min(1440, Number(ruleForm.min_study_minutes) || 0)),
+      p_max_continuous_days: Math.max(1, Math.min(30, Number(ruleForm.max_continuous_days) || 1)),
+      p_penalty_points: Math.max(0, Number(ruleForm.penalty_points) || 0),
+      p_strike_value: Math.max(0, Math.min(10, Number(ruleForm.strike_value) || 0)),
+      p_strike_threshold: Math.max(0, Math.min(100, Number(ruleForm.strike_threshold) || 0)),
+      p_restrict_days: Math.max(0, Math.min(365, Number(ruleForm.restrict_days) || 0)),
+    }
+    const { data, error } = await supabase.rpc('admin_upsert_reservation_rules', payload).single()
+    setRuleSaving(false)
+    if (error) {
+      setRuleMsg({ type: 'error', text: '保存失败：' + error.message })
+      return
+    }
+    if (data) {
+      setRuleForm({
+        is_enabled: Boolean(data.is_enabled),
+        min_study_minutes: Number(data.min_study_minutes ?? payload.p_min_study_minutes),
+        max_continuous_days: Number(data.max_continuous_days ?? payload.p_max_continuous_days),
+        penalty_points: Number(data.penalty_points ?? payload.p_penalty_points),
+        strike_value: Number(data.strike_value ?? payload.p_strike_value),
+        strike_threshold: Number(data.strike_threshold ?? payload.p_strike_threshold),
+        restrict_days: Number(data.restrict_days ?? payload.p_restrict_days),
+      })
+    }
+    setRuleMsg({ type: 'success', text: '连续预约规则已更新' })
+  }
+
   return (
     <div className="page">
       <div className="page-header">
         <Users size={20} />
         <h2>用户管理</h2>
         <span className="date-badge">待审核 {pendingCount}</span>
+      </div>
+
+      <div className="au-rule-card">
+        <div className="section-title"><SlidersHorizontal size={14} /> 连续预约规则</div>
+        {ruleLoading ? (
+          <div className="loading">规则加载中...</div>
+        ) : (
+          <>
+            <div className="au-rule-grid">
+              <label className="field-group">
+                <span>连续预约开关</span>
+                <select
+                  value={ruleForm.is_enabled ? 'on' : 'off'}
+                  onChange={e => updateRuleField('is_enabled', e.target.value === 'on')}
+                >
+                  <option value="on">开启</option>
+                  <option value="off">关闭</option>
+                </select>
+              </label>
+              <label className="field-group">
+                <span>每日最低学习时长(分钟)</span>
+                <input
+                  type="number"
+                  min={0}
+                  max={1440}
+                  value={ruleForm.min_study_minutes}
+                  onChange={e => updateRuleField('min_study_minutes', e.target.value)}
+                />
+              </label>
+              <label className="field-group">
+                <span>连续预约最多天数</span>
+                <input
+                  type="number"
+                  min={1}
+                  max={30}
+                  value={ruleForm.max_continuous_days}
+                  onChange={e => updateRuleField('max_continuous_days', e.target.value)}
+                />
+              </label>
+              <label className="field-group">
+                <span>未达标扣分</span>
+                <input
+                  type="number"
+                  step="0.1"
+                  min={0}
+                  value={ruleForm.penalty_points}
+                  onChange={e => updateRuleField('penalty_points', e.target.value)}
+                />
+              </label>
+              <label className="field-group">
+                <span>未达标记次</span>
+                <input
+                  type="number"
+                  min={0}
+                  max={10}
+                  value={ruleForm.strike_value}
+                  onChange={e => updateRuleField('strike_value', e.target.value)}
+                />
+              </label>
+              <label className="field-group">
+                <span>触发限制阈值(累计次)</span>
+                <input
+                  type="number"
+                  min={0}
+                  max={100}
+                  value={ruleForm.strike_threshold}
+                  onChange={e => updateRuleField('strike_threshold', e.target.value)}
+                />
+              </label>
+              <label className="field-group">
+                <span>触发后限制天数</span>
+                <input
+                  type="number"
+                  min={0}
+                  max={365}
+                  value={ruleForm.restrict_days}
+                  onChange={e => updateRuleField('restrict_days', e.target.value)}
+                />
+              </label>
+            </div>
+            {ruleMsg && <div className={`msg ${ruleMsg.type}`}>{ruleMsg.text}</div>}
+            <div className="au-rule-actions">
+              <button className="btn-preset" onClick={handleSaveRules} disabled={ruleSaving}>
+                {ruleSaving ? '保存中...' : '保存规则'}
+              </button>
+            </div>
+          </>
+        )}
       </div>
 
       <div className="tab-group au-filter-row">

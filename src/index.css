@@ -852,7 +852,13 @@ body::after {
 .checkin-btn { margin-top: 0.5rem; }
 
 /* ===== RESERVE ===== */
-.reserve-controls { margin-bottom: 1.5rem; display: flex; flex-direction: column; gap: 0.75rem; }
+.reserve-controls {
+  margin-bottom: 0.75rem;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem;
+}
 
 .date-input {
   background: var(--bg-input);
@@ -867,6 +873,23 @@ body::after {
   width: fit-content;
 }
 .date-input:focus { border-color: var(--neon-cyan); box-shadow: 0 0 8px rgba(0, 212, 255, 0.15); }
+.reserve-days-input {
+  width: 130px;
+}
+.reserve-mode-tabs {
+  max-width: 360px;
+  margin-bottom: 0.6rem;
+}
+.reserve-rule-hint {
+  margin-bottom: 0.8rem;
+  padding: 0.5rem 0.65rem;
+  border-radius: var(--radius);
+  border: 1px solid var(--border-dim);
+  background: rgba(0, 212, 255, 0.06);
+  color: var(--text-muted);
+  font-size: 0.76rem;
+  line-height: 1.55;
+}
 
 
 /* --- Reservation List --- */
@@ -1544,6 +1567,38 @@ body::after {
   border-color: var(--neon-cyan);
   box-shadow: 0 0 8px rgba(0, 212, 255, 0.15);
 }
+.au-rule-card {
+  background: var(--bg-panel);
+  border: 1px solid var(--border-dim);
+  border-radius: var(--radius-lg);
+  padding: 0.9rem 1rem;
+  margin-bottom: 0.8rem;
+}
+.au-rule-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  gap: 0.6rem;
+}
+.au-rule-grid .field-group {
+  gap: 0.28rem;
+  margin-bottom: 0;
+}
+.au-rule-grid .field-group span {
+  font-size: 0.66rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.au-rule-grid .field-group input,
+.au-rule-grid .field-group select {
+  width: 100%;
+  font-size: 0.8rem;
+}
+.au-rule-actions {
+  margin-top: 0.7rem;
+  display: flex;
+  justify-content: flex-end;
+}
 .au-filter-row { margin-bottom: 0.6rem; }
 .au-list { display: flex; flex-direction: column; gap: 0.4rem; }
 .au-item {
@@ -1773,6 +1828,9 @@ body::after {
   .export-actions { flex-direction: column; gap: 0.5rem; }
   .btn-export { justify-content: center; }
   .date-input { width: 100%; }
+  .reserve-controls { flex-direction: column; align-items: stretch; }
+  .reserve-mode-tabs { max-width: 100%; }
+  .reserve-days-input { width: 100%; }
 
   /* Leaderboard */
   .lb-item { padding: 0.65rem 0.75rem; gap: 0.7rem; }
@@ -1801,6 +1859,9 @@ body::after {
   .au-pagination { flex-direction: column; align-items: stretch; }
   .au-page-actions { width: 100%; }
   .au-page-actions .btn-preset { flex: 1; }
+  .au-rule-grid { grid-template-columns: 1fr; }
+  .au-rule-actions { justify-content: stretch; }
+  .au-rule-actions .btn-preset { width: 100%; }
 }
 
 @media (max-width: 380px) {
