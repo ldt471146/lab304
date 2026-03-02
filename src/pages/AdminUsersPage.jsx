@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
 import { formatMinutes, formatPoints, AVATAR_FALLBACK, formatGender } from '../lib/constants'
-import { Users, Search, Clock, Star, Trash2, X, Check, Ban, Eye, SlidersHorizontal } from 'lucide-react'
+import { Users, Search, Clock, Star, Trash2, X, Check, Ban, Eye, SlidersHorizontal, ShieldPlus, ShieldOff } from 'lucide-react'
 
 export default function AdminUsersPage() {
   const PAGE_SIZE = 10
@@ -38,7 +38,7 @@ export default function AdminUsersPage() {
     if (!profile?.is_admin) return
     supabase
       .from('users')
-      .select('id, name, student_id, grade, points, total_minutes, created_at, avatar_url, id_photo_url, email, approval_status, gender, class_name, phone, reservation_strikes, reservation_restricted_until')
+      .select('id, name, student_id, grade, points, total_minutes, created_at, avatar_url, id_photo_url, email, approval_status, gender, class_name, phone, reservation_strikes, reservation_restricted_until, is_admin, is_super_admin')
       .order('created_at', { ascending: false })
       .then(({ data }) => { setUsers(data || []); setLoading(false) })
   }, [profile])
@@ -122,6 +122,22 @@ export default function AdminUsersPage() {
       return
     }
     setUsers(prev => prev.map(u => (u.id === userId ? { ...u, approval_status: 'rejected' } : u)))
+  }
+
+  async function handleSetAdminRole(userId, makeAdmin) {
+    const { error } = await supabase.rpc('admin_set_admin_role', {
+      target_user_id: userId,
+      make_admin: makeAdmin,
+    })
+    if (error) {
+      alert((makeAdmin ? '任命管理员失败：' : '回收管理员失败：') + error.message)
+      return
+    }
+    setUsers(prev => prev.map(u => (
+      u.id === userId
+        ? { ...u, is_admin: makeAdmin, approval_status: makeAdmin ? 'approved' : u.approval_status }
+        : u
+    )))
   }
 
   function updateRuleField(key, value) {
@@ -301,6 +317,8 @@ export default function AdminUsersPage() {
                 <span className="au-name">{u.name}</span>
                 <span className="au-meta">
                   {u.grade}级 // {u.student_id} // {u.email || '--'} // {u.approval_status === 'approved' ? '已通过' : u.approval_status === 'rejected' ? '已驳回' : '待审核'}
+                  {' // '}
+                  {u.is_super_admin ? '超级管理员' : u.is_admin ? '管理员' : '普通用户'}
                 </span>
               </div>
               <div className="au-stats">
@@ -316,9 +334,19 @@ export default function AdminUsersPage() {
               <button className="au-del-btn" onClick={() => setViewUser(u)} title="查看资料">
                 <Eye size={14} />
               </button>
-              {u.id !== profile.id && (
+              {u.id !== profile.id && !u.is_admin && !u.is_super_admin && (
                 <button className="au-del-btn" onClick={() => setConfirmUser(u)} title="删除用户">
                   <Trash2 size={14} />
+                </button>
+              )}
+              {profile.is_super_admin && u.id !== profile.id && !u.is_super_admin && !u.is_admin && (
+                <button className="au-del-btn" onClick={() => handleSetAdminRole(u.id, true)} title="任命管理员">
+                  <ShieldPlus size={14} />
+                </button>
+              )}
+              {profile.is_super_admin && u.id !== profile.id && !u.is_super_admin && u.is_admin && (
+                <button className="au-del-btn" onClick={() => handleSetAdminRole(u.id, false)} title="回收管理员">
+                  <ShieldOff size={14} />
                 </button>
               )}
               {u.id !== profile.id && u.approval_status !== 'approved' && (

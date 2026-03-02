@@ -27,7 +27,7 @@ export default function LeaderboardPage() {
       const { start, end } = getWeekRange()
       const { data, error } = await supabase
         .from('checkins')
-        .select('user_id, checked_at, checked_out_at, users!inner(id, name, student_id, grade)')
+        .select('user_id, checked_at, checked_out_at, users!inner(id, name, student_id, grade, is_super_admin)')
         .gte('checked_at', start.toISOString())
         .lt('checked_at', end.toISOString())
         .not('checked_out_at', 'is', null)
@@ -38,6 +38,7 @@ export default function LeaderboardPage() {
       } else {
         const map = new Map()
         for (const row of data || []) {
+          if (row.users?.is_super_admin) continue
           const mins = Math.max(0, Math.floor((new Date(row.checked_out_at) - new Date(row.checked_at)) / 60000))
           const prev = map.get(row.user_id)
           if (!prev) {
