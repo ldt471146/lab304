@@ -3,6 +3,7 @@ import { NavLink } from 'react-router-dom'
 import { LayoutDashboard, CheckCheck, CalendarCheck, Trophy, CalendarClock, LogOut, User, Users, Sun, Moon } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
+import { useTheme } from '../context/ThemeContext'
 import { AVATAR_FALLBACK } from '../lib/constants'
 
 const NAV = [
@@ -16,6 +17,7 @@ const NAV = [
 
 export default function NavBar() {
   const { profile } = useAuth()
+  const { theme, toggle } = useTheme()
   const [pendingCount, setPendingCount] = useState(0)
 
   useEffect(() => {
