@@ -4,6 +4,7 @@ import { LayoutDashboard, CheckCheck, CalendarCheck, Trophy, CalendarClock, LogO
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
 import { AVATAR_FALLBACK } from '../lib/constants'
+import { useTheme } from '../context/ThemeContext'
 
 const NAV = [
   { to: '/', icon: <LayoutDashboard size={16} />, label: '主页' },
@@ -16,6 +17,7 @@ const NAV = [
 
 export default function NavBar() {
   const { profile } = useAuth()
+  const { theme, toggle } = useTheme()
   const [pendingCount, setPendingCount] = useState(0)
 
   useEffect(() => {
@@ -66,6 +68,10 @@ export default function NavBar() {
             </span>
           </NavLink>
         )}
+        <button className="nav-item nav-item-btn mobile-only" type="button" onClick={toggle}>
+          {theme === 'dark' ? <Sun size={16} /> : <Moon size={16} />}
+          <span>{theme === 'dark' ? '浅色' : '深色'}</span>
+        </button>
       </div>
       <div className="nav-bottom">
         <button className="theme-toggle" onClick={toggle}>
