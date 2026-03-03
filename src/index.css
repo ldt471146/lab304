@@ -93,9 +93,27 @@ body::after {
   padding: 2rem;
   width: calc(100vw - 280px);
   max-width: 1550px;
+  overscroll-behavior-y: contain;
 }
 
 .page { padding-bottom: 3rem; }
+
+.pull-refresh {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-muted);
+  font-size: 0.82rem;
+  font-family: var(--font-mono);
+  letter-spacing: 0.04em;
+  transition: height 0.2s ease;
+  overflow: hidden;
+  user-select: none;
+}
+
+.pull-refresh.refreshing {
+  color: var(--neon-cyan);
+}
 
 /* ===== NAVBAR ===== */
 .navbar {
