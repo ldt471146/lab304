@@ -1,6 +1,6 @@
 {
   "appId": "com.lab304.app",
-  "appName": "LAB 304",
+  "appName": "304签到系统",
   "webDir": "dist",
   "server": {
     "url": "http://47.120.21.227/lab304/",
