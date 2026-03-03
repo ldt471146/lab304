@@ -2,9 +2,8 @@ import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
-import { useTheme } from '../context/ThemeContext'
 import { SLOT_TEXT, getLocalDate, formatMinutes, formatPoints } from '../lib/constants'
-import { LayoutDashboard, CheckCircle, Clock, Star, Calendar, Download, FileSpreadsheet, CalendarCheck, ClipboardList, Megaphone, Pin, Plus, Pencil, Trash2, X, Sun, Moon } from 'lucide-react'
+import { LayoutDashboard, CheckCircle, Clock, Star, Calendar, Download, FileSpreadsheet, CalendarCheck, ClipboardList, Megaphone, Pin, Plus, Pencil, Trash2, X } from 'lucide-react'
 import * as XLSX from 'xlsx'
 
 function formatDateTime(iso) {
@@ -67,7 +66,6 @@ function downloadExcel(rows, filename, sheetName = '签到记录') {
 
 export default function Dashboard() {
   const { profile } = useAuth()
-  const { theme, toggle } = useTheme()
   const navigate = useNavigate()
   const [todayCheckins, setTodayCheckins] = useState([])
   const [myReservations, setMyReservations] = useState([])
@@ -262,9 +260,6 @@ export default function Dashboard() {
       <div className="page-header">
         <LayoutDashboard size={18} />
         <h2>仪表板</h2>
-        <button className="mobile-home-theme" type="button" onClick={toggle} aria-label="切换主题">
-          {theme === 'dark' ? <Sun size={16} /> : <Moon size={16} />}
-        </button>
         <span className="date-badge">{getLocalDate()}</span>
       </div>
 
