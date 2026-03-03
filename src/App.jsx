@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react'
-import { HashRouter, Routes, Route, Navigate } from 'react-router-dom'
+import { BrowserRouter, HashRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { AuthProvider, useAuth } from './context/AuthContext'
 import { ThemeProvider } from './context/ThemeContext'
 import AuthPage from './pages/AuthPage'
@@ -15,6 +15,11 @@ import ProfilePage from './pages/ProfilePage'
 import AdminUsersPage from './pages/AdminUsersPage'
 import NavBar from './components/NavBar'
 import UpdatePrompt from './components/UpdatePrompt'
+
+const isNativePlatform = Boolean(globalThis?.window?.Capacitor?.isNativePlatform?.())
+const routerBasename = isNativePlatform
+  ? (import.meta.env.VITE_NATIVE_ROUTER_BASENAME || '/')
+  : '/lab304'
 
 function AppRoutes() {
   const { session, profile, passwordRecovery } = useAuth()
@@ -93,14 +98,16 @@ function AppRoutes() {
 }
 
 export default function App() {
+  const Router = isNativePlatform ? BrowserRouter : HashRouter
+  const routerProps = isNativePlatform ? { basename: routerBasename } : {}
   return (
     <ThemeProvider>
-      <HashRouter>
+      <Router {...routerProps}>
         <AuthProvider>
           <UpdatePrompt />
           <AppRoutes />
         </AuthProvider>
-      </HashRouter>
+      </Router>
     </ThemeProvider>
   )
 }
