@@ -255,6 +255,22 @@ body::after {
   color: var(--neon-cyan);
   text-shadow: 0 0 8px rgba(0, 212, 255, 0.3);
 }
+.mobile-home-theme {
+  display: none;
+  width: 32px;
+  height: 32px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  border: 1px solid var(--border-dim);
+  background: rgba(0, 212, 255, 0.08);
+  color: var(--neon-cyan);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+.mobile-home-theme:active {
+  transform: scale(0.96);
+}
 .date-badge {
   margin-left: auto;
   font-size: 0.72rem;
@@ -1821,6 +1837,8 @@ body::after {
   /* Page header */
   .page-header { margin-bottom: 1rem; }
   .page-header h2 { font-size: 1rem; }
+  .mobile-home-theme { display: inline-flex; margin-left: auto; }
+  .date-badge { margin-left: 0.5rem; }
 
   /* Dashboard hero → stack */
   .dashboard-hero {
