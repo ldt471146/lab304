@@ -986,6 +986,12 @@ body::after {
   align-items: center;
   gap: 0.7rem;
 }
+.seat-owner-photo-trigger {
+  flex-shrink: 0;
+}
+.seat-owner-photo-img {
+  aspect-ratio: 3 / 4;
+}
 .seat-owner-avatar {
   width: 42px;
   height: 42px;
@@ -1001,6 +1007,16 @@ body::after {
   color: var(--text-bright);
   font-size: 0.82rem;
   margin-bottom: 0.15rem;
+}
+.seat-owner-status {
+  margin-top: 0.4rem;
+  font-size: 0.74rem;
+}
+.seat-owner-status.checked-in {
+  color: var(--neon-green);
+}
+.seat-owner-status.reserved {
+  color: var(--neon-yellow);
 }
 
 /* ===== LEADERBOARD ===== */
@@ -2009,6 +2025,14 @@ body::after {
   .profile-field { padding: 0.5rem 0.6rem; }
   .profile-photo-row { width: 100%; margin-left: 0; justify-content: space-between; }
   .profile-photo-thumb { width: 52px; height: 52px; }
+  .seat-owner-body {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .seat-owner-photo-trigger {
+    width: 100%;
+    max-width: none;
+  }
   .au-modal-profile { width: min(94vw, 440px); }
   .au-profile-photo-block {
     flex-direction: column;

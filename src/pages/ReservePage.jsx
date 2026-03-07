@@ -3,7 +3,7 @@ import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
 import { AVATAR_FALLBACK, getLocalDate } from '../lib/constants'
 import ZoneSeatMap from '../components/ZoneSeatMap'
-import { CalendarCheck, Trash2 } from 'lucide-react'
+import { CalendarCheck, Trash2, X } from 'lucide-react'
 
 export default function ReservePage() {
   const { profile, fetchProfile } = useAuth()
@@ -11,6 +11,7 @@ export default function ReservePage() {
   const [myReservations, setMyReservations] = useState([])
   const [selectedSeat, setSelectedSeat] = useState(null)
   const [occupiedSeatInfo, setOccupiedSeatInfo] = useState(null)
+  const [photoPreview, setPhotoPreview] = useState(null)
   const [reserveDate, setReserveDate] = useState(getLocalDate)
   const [reserveMode, setReserveMode] = useState('single')
   const [seriesDays, setSeriesDays] = useState(3)
@@ -56,16 +57,28 @@ export default function ReservePage() {
       .select('seat_id, user_id, users(name, student_id, grade, avatar_url, id_photo_url)')
       .eq('reserve_date', reserveDate).eq('status', 'active')
     if (tErr) console.error('fetchTaken:', tErr.message)
+    const { data: activeCheckins, error: cErr } = await supabase.from('checkins')
+      .select('seat_id, user_id')
+      .eq('check_date', reserveDate)
+      .is('checked_out_at', null)
+    if (cErr) console.error('fetchActiveCheckins:', cErr.message)
     const takenBySeat = new Map((taken || []).map(r => [r.seat_id, r]))
+    const checkedInBySeat = new Set(
+      (activeCheckins || []).map(c => `${c.seat_id}:${c.user_id}`)
+    )
     setSeats((data || []).map(s => {
       const reservation = takenBySeat.get(s.id) || null
       const reserveUser = reservation?.users || null
       const isMine = reservation?.user_id === profile?.id
+      const occupancyStatus = reservation && checkedInBySeat.has(`${reservation.seat_id}:${reservation.user_id}`)
+        ? 'checked_in'
+        : 'reserved'
       return {
         ...s,
         taken: !!reservation,
         reserve_user: reserveUser,
         reserve_user_id: reservation?.user_id || null,
+        occupancy_status: reservation ? occupancyStatus : null,
         occupiedTitle: reservation
           ? (isMine ? `你已预约 ${s.seat_number}` : `${reserveUser?.name || '其他同学'} 已预约`)
           : s.seat_number,
@@ -106,7 +119,35 @@ export default function ReservePage() {
 
   useEffect(() => {
     setOccupiedSeatInfo(null)
+    setPhotoPreview(null)
   }, [reserveDate])
+
+  useEffect(() => {
+    if (!photoPreview) return undefined
+    const handleKeyDown = (event) => {
+      if (event.key === 'Escape') setPhotoPreview(null)
+    }
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [photoPreview])
+
+  function getSeatOccupantPhoto(seat) {
+    return seat?.reserve_user?.id_photo_url
+      || seat?.reserve_user?.avatar_url
+      || AVATAR_FALLBACK(seat?.reserve_user?.student_id || seat?.reserve_user?.name || 'user')
+  }
+
+  function getSeatOccupancyStatusText(seat) {
+    return seat?.occupancy_status === 'checked_in' ? '已签到' : '已预约，未签到'
+  }
+
+  function openSeatPhotoPreview(seat) {
+    setPhotoPreview({
+      src: getSeatOccupantPhoto(seat),
+      title: `${seat?.reserve_user?.name || '用户'}的照片`,
+      hint: seat?.reserve_user?.id_photo_url ? '个人照片' : '未上传个人照片，当前显示头像',
+    })
+  }
 
   async function handleReserve() {
     if (!selectedSeat) return
@@ -271,14 +312,49 @@ export default function ReservePage() {
             座位 {occupiedSeatInfo.seat_number} 已被预约
           </div>
           <div className="seat-owner-body">
-            <img
-              className="seat-owner-avatar"
-              src={occupiedSeatInfo.reserve_user.avatar_url || occupiedSeatInfo.reserve_user.id_photo_url || AVATAR_FALLBACK(occupiedSeatInfo.reserve_user.student_id || occupiedSeatInfo.reserve_user.name || 'user')}
-              alt=""
-            />
+            <button
+              type="button"
+              className="au-photo-trigger seat-owner-photo-trigger"
+              onClick={() => openSeatPhotoPreview(occupiedSeatInfo)}
+            >
+              <img
+                className="au-photo-trigger-img seat-owner-photo-img"
+                src={getSeatOccupantPhoto(occupiedSeatInfo)}
+                alt={`${occupiedSeatInfo.reserve_user.name || '用户'}照片`}
+              />
+              <span className="au-photo-trigger-hint">
+                {occupiedSeatInfo.reserve_user.id_photo_url ? '点击查看个人照片大图' : '未上传个人照片，点击查看头像'}
+              </span>
+            </button>
             <div className="seat-owner-meta">
               <div className="seat-owner-name">{occupiedSeatInfo.reserve_user.name || '未命名用户'}</div>
               <div>{occupiedSeatInfo.reserve_user.grade || '--'}级 // {occupiedSeatInfo.reserve_user.student_id || '--'}</div>
+              <div className={`seat-owner-status ${occupiedSeatInfo.occupancy_status === 'checked_in' ? 'checked-in' : 'reserved'}`}>
+                当前状态：{getSeatOccupancyStatusText(occupiedSeatInfo)}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+      {photoPreview && (
+        <div className="au-preview-overlay" onClick={() => setPhotoPreview(null)}>
+          <div className="au-preview-shell" onClick={e => e.stopPropagation()}>
+            <button
+              type="button"
+              className="au-preview-close"
+              onClick={() => setPhotoPreview(null)}
+              aria-label="关闭大图预览"
+            >
+              <X size={18} />
+            </button>
+            <img
+              className="au-preview-image"
+              src={photoPreview.src}
+              alt={photoPreview.title}
+            />
+            <div className="au-preview-caption">
+              <strong>{photoPreview.title}</strong>
+              <span>{photoPreview.hint}</span>
             </div>
           </div>
         </div>
