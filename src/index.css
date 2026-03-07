@@ -1797,6 +1797,14 @@ body::after {
 }
 .au-modal-confirm:hover:not(:disabled) { background: rgba(255,0,64,0.18); box-shadow: 0 0 10px rgba(255,0,64,0.2); }
 .au-modal-confirm:disabled { opacity: 0.5; cursor: not-allowed; }
+.au-modal-note {
+  margin-top: 0.45rem;
+  font-size: 0.76rem;
+  color: var(--text-muted);
+}
+.au-inline-action {
+  margin-top: 0.9rem;
+}
 .au-profile-photo-block {
   display: flex;
   align-items: center;

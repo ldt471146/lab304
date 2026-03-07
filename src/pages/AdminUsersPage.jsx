@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
 import { formatMinutes, formatPoints, AVATAR_FALLBACK, formatGender } from '../lib/constants'
-import { Users, Search, Clock, Star, Trash2, X, Check, Ban, Eye, SlidersHorizontal, ShieldPlus, ShieldOff } from 'lucide-react'
+import { Users, Search, Clock, Star, Trash2, X, Check, Ban, Eye, SlidersHorizontal, ShieldPlus, ShieldOff, Pencil } from 'lucide-react'
 
 export default function AdminUsersPage() {
   const PAGE_SIZE = 10
@@ -15,6 +15,10 @@ export default function AdminUsersPage() {
   const [statusFilter, setStatusFilter] = useState('pending')
   const [confirmUser, setConfirmUser] = useState(null)
   const [viewUser, setViewUser] = useState(null)
+  const [strikeEditor, setStrikeEditor] = useState(null)
+  const [strikeValue, setStrikeValue] = useState('')
+  const [strikeSaving, setStrikeSaving] = useState(false)
+  const [strikeError, setStrikeError] = useState(null)
   const [photoPreview, setPhotoPreview] = useState(null)
   const [deleting, setDeleting] = useState(false)
   const [page, setPage] = useState(1)
@@ -148,6 +152,53 @@ export default function AdminUsersPage() {
         ? { ...u, is_admin: makeAdmin, approval_status: makeAdmin ? 'approved' : u.approval_status }
         : u
     )))
+  }
+
+  function applyUserPatch(userId, patch) {
+    setUsers(prev => prev.map(u => (u.id === userId ? { ...u, ...patch } : u)))
+    setViewUser(prev => (prev?.id === userId ? { ...prev, ...patch } : prev))
+    setStrikeEditor(prev => (prev?.id === userId ? { ...prev, ...patch } : prev))
+  }
+
+  function openStrikeEditor(user) {
+    setStrikeEditor(user)
+    setStrikeValue(String(Math.max(0, Number(user?.reservation_strikes || 0))))
+    setStrikeError(null)
+  }
+
+  function closeStrikeEditor() {
+    if (strikeSaving) return
+    setStrikeEditor(null)
+    setStrikeValue('')
+    setStrikeError(null)
+  }
+
+  async function handleSaveStrikeEditor() {
+    if (!strikeEditor) return
+    const parsed = Number(strikeValue)
+    if (!Number.isFinite(parsed) || parsed < 0) {
+      setStrikeError('请输入 0 或更大的整数')
+      return
+    }
+    const nextValue = Math.trunc(parsed)
+    setStrikeSaving(true)
+    setStrikeError(null)
+    const { data, error } = await supabase
+      .rpc('admin_set_user_reservation_strikes', {
+        target_user_id: strikeEditor.id,
+        p_reservation_strikes: nextValue,
+      })
+      .single()
+    setStrikeSaving(false)
+    if (error) {
+      setStrikeError(error.message)
+      return
+    }
+    applyUserPatch(strikeEditor.id, {
+      reservation_strikes: Number(data?.reservation_strikes ?? nextValue),
+      reservation_restricted_until: data?.reservation_restricted_until || null,
+    })
+    closeStrikeEditor()
   }
 
   function updateRuleField(key, value) {
@@ -361,6 +412,11 @@ export default function AdminUsersPage() {
               <button className="au-del-btn" onClick={() => setViewUser(u)} title="查看资料">
                 <Eye size={14} />
               </button>
+              {(profile.is_super_admin || !u.is_super_admin) && (
+                <button className="au-del-btn" onClick={() => openStrikeEditor(u)} title="修改标记">
+                  <Pencil size={14} />
+                </button>
+              )}
               {u.id !== profile.id && !u.is_admin && !u.is_super_admin && (
                 <button className="au-del-btn" onClick={() => setConfirmUser(u)} title="删除用户">
                   <Trash2 size={14} />
@@ -456,7 +512,45 @@ export default function AdminUsersPage() {
                 <div><b>联系电话</b>：{viewUser.phone || '--'}</div>
                 <div><b>标记次数</b>：{Number(viewUser.reservation_strikes || 0)}</div>
                 <div><b>限制到期</b>：{formatRestrictDate(viewUser.reservation_restricted_until)}</div>
+                {(profile.is_super_admin || !viewUser.is_super_admin) && (
+                  <button type="button" className="btn-preset au-inline-action" onClick={() => openStrikeEditor(viewUser)}>
+                    修改标记
+                  </button>
+                )}
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+      {strikeEditor && (
+        <div className="au-modal-overlay" onClick={closeStrikeEditor}>
+          <div className="au-modal" onClick={e => e.stopPropagation()}>
+            <div className="au-modal-header">
+              <span>修改标记</span>
+              <button className="au-modal-close" onClick={closeStrikeEditor}><X size={16} /></button>
+            </div>
+            <div className="au-modal-body">
+              <div><strong>{strikeEditor.name}</strong>（{strikeEditor.student_id}）</div>
+              <div className="au-modal-note">当前限制到期：{formatRestrictDate(strikeEditor.reservation_restricted_until)}</div>
+              <div className="au-modal-note">低于阈值后会自动解除预约限制。</div>
+              <label className="field-group" style={{ marginTop: '0.85rem' }}>
+                <span>标记次数</span>
+                <input
+                  type="number"
+                  min={0}
+                  step={1}
+                  value={strikeValue}
+                  onChange={e => setStrikeValue(e.target.value)}
+                  disabled={strikeSaving}
+                />
+              </label>
+              {strikeError && <div className="msg error">{strikeError}</div>}
+            </div>
+            <div className="au-modal-footer">
+              <button className="au-modal-cancel" onClick={closeStrikeEditor} disabled={strikeSaving}>取消</button>
+              <button className="au-modal-confirm" onClick={handleSaveStrikeEditor} disabled={strikeSaving}>
+                {strikeSaving ? '保存中...' : '保存'}
+              </button>
             </div>
           </div>
         </div>

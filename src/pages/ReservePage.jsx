@@ -48,13 +48,16 @@ export default function ReservePage() {
   )
 
   const fetchSeats = useCallback(async () => {
+    const occupantFields = profile?.is_admin
+      ? 'name, student_id, grade, avatar_url, id_photo_url'
+      : 'name, student_id, grade, avatar_url'
     const { data, error } = await supabase.from('seats')
       .select('id, seat_number, zone_row, zone_col, row_label, col_number')
       .eq('is_active', true)
       .order('seat_number')
     if (error) console.error('fetchSeats:', error.message)
     const { data: taken, error: tErr } = await supabase.from('reservations')
-      .select('seat_id, user_id, users(name, student_id, grade, avatar_url, id_photo_url)')
+      .select(`seat_id, user_id, users(${occupantFields})`)
       .eq('reserve_date', reserveDate).eq('status', 'active')
     if (tErr) console.error('fetchTaken:', tErr.message)
     const { data: activeCheckins, error: cErr } = await supabase.from('checkins')
@@ -84,7 +87,7 @@ export default function ReservePage() {
           : s.seat_number,
       }
     }))
-  }, [reserveDate, profile?.id])
+  }, [reserveDate, profile?.id, profile?.is_admin])
 
   const fetchMyReservations = useCallback(async () => {
     if (!profile) return
@@ -132,7 +135,7 @@ export default function ReservePage() {
   }, [photoPreview])
 
   function getSeatOccupantPhoto(seat) {
-    return seat?.reserve_user?.id_photo_url
+    return (profile?.is_admin ? seat?.reserve_user?.id_photo_url : null)
       || seat?.reserve_user?.avatar_url
       || AVATAR_FALLBACK(seat?.reserve_user?.student_id || seat?.reserve_user?.name || 'user')
   }
@@ -142,10 +145,11 @@ export default function ReservePage() {
   }
 
   function openSeatPhotoPreview(seat) {
+    const canUsePersonalPhoto = Boolean(profile?.is_admin && seat?.reserve_user?.id_photo_url)
     setPhotoPreview({
       src: getSeatOccupantPhoto(seat),
       title: `${seat?.reserve_user?.name || '用户'}的照片`,
-      hint: seat?.reserve_user?.id_photo_url ? '个人照片' : '未上传个人照片，当前显示头像',
+      hint: canUsePersonalPhoto ? '个人照片' : '头像预览',
     })
   }
 
@@ -323,7 +327,7 @@ export default function ReservePage() {
                 alt={`${occupiedSeatInfo.reserve_user.name || '用户'}照片`}
               />
               <span className="au-photo-trigger-hint">
-                {occupiedSeatInfo.reserve_user.id_photo_url ? '点击查看个人照片大图' : '未上传个人照片，点击查看头像'}
+                {profile?.is_admin && occupiedSeatInfo.reserve_user.id_photo_url ? '点击查看个人照片大图' : '点击查看头像大图'}
               </span>
             </button>
             <div className="seat-owner-meta">
