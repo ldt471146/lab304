@@ -15,6 +15,7 @@ export default function AdminUsersPage() {
   const [statusFilter, setStatusFilter] = useState('pending')
   const [confirmUser, setConfirmUser] = useState(null)
   const [viewUser, setViewUser] = useState(null)
+  const [photoPreview, setPhotoPreview] = useState(null)
   const [deleting, setDeleting] = useState(false)
   const [page, setPage] = useState(1)
   const [ruleForm, setRuleForm] = useState({
@@ -92,6 +93,15 @@ export default function AdminUsersPage() {
   useEffect(() => {
     if (page > totalPages) setPage(totalPages)
   }, [page, totalPages])
+
+  useEffect(() => {
+    if (!photoPreview) return undefined
+    const handleKeyDown = (event) => {
+      if (event.key === 'Escape') setPhotoPreview(null)
+    }
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [photoPreview])
 
   async function handleDelete() {
     if (!confirmUser) return
@@ -181,6 +191,23 @@ export default function AdminUsersPage() {
     const d = new Date(v)
     if (Number.isNaN(d.getTime())) return v
     return d.toLocaleDateString('zh-CN')
+  }
+
+  function getUserPhoto(user) {
+    return user?.id_photo_url || user?.avatar_url || AVATAR_FALLBACK(user?.student_id || 'user')
+  }
+
+  function openPhotoPreview(user) {
+    setPhotoPreview({
+      src: getUserPhoto(user),
+      title: `${user?.name || '用户'}的照片`,
+      hint: user?.id_photo_url ? '个人照片' : '未上传个人照片，当前显示头像',
+    })
+  }
+
+  function closeViewUser() {
+    setPhotoPreview(null)
+    setViewUser(null)
   }
 
   return (
@@ -395,15 +422,28 @@ export default function AdminUsersPage() {
         </div>
       )}
       {viewUser && (
-        <div className="au-modal-overlay" onClick={() => setViewUser(null)}>
-          <div className="au-modal" onClick={e => e.stopPropagation()}>
+        <div className="au-modal-overlay" onClick={closeViewUser}>
+          <div className="au-modal au-modal-profile" onClick={e => e.stopPropagation()}>
             <div className="au-modal-header">
               <span>用户资料</span>
-              <button className="au-modal-close" onClick={() => setViewUser(null)}><X size={16} /></button>
+              <button className="au-modal-close" onClick={closeViewUser}><X size={16} /></button>
             </div>
             <div className="au-modal-body">
-              <div className="seat-owner-body">
-                <img className="seat-owner-avatar" src={viewUser.id_photo_url || viewUser.avatar_url || AVATAR_FALLBACK(viewUser.student_id)} alt="" />
+              <div className="au-profile-photo-block">
+                <button
+                  type="button"
+                  className="au-photo-trigger"
+                  onClick={() => openPhotoPreview(viewUser)}
+                >
+                  <img
+                    className="au-photo-trigger-img"
+                    src={getUserPhoto(viewUser)}
+                    alt={`${viewUser.name || '用户'}照片`}
+                  />
+                  <span className="au-photo-trigger-hint">
+                    {viewUser.id_photo_url ? '点击查看个人照片大图' : '未上传个人照片，点击查看头像'}
+                  </span>
+                </button>
                 <div className="seat-owner-meta">
                   <div className="seat-owner-name">{viewUser.name || '--'}</div>
                   <div>{viewUser.grade || '--'}级 // {viewUser.student_id || '--'}</div>
@@ -417,6 +457,29 @@ export default function AdminUsersPage() {
                 <div><b>标记次数</b>：{Number(viewUser.reservation_strikes || 0)}</div>
                 <div><b>限制到期</b>：{formatRestrictDate(viewUser.reservation_restricted_until)}</div>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+      {photoPreview && (
+        <div className="au-preview-overlay" onClick={() => setPhotoPreview(null)}>
+          <div className="au-preview-shell" onClick={e => e.stopPropagation()}>
+            <button
+              type="button"
+              className="au-preview-close"
+              onClick={() => setPhotoPreview(null)}
+              aria-label="关闭大图预览"
+            >
+              <X size={18} />
+            </button>
+            <img
+              className="au-preview-image"
+              src={photoPreview.src}
+              alt={photoPreview.title}
+            />
+            <div className="au-preview-caption">
+              <strong>{photoPreview.title}</strong>
+              <span>{photoPreview.hint}</span>
             </div>
           </div>
         </div>
