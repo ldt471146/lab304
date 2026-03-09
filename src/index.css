@@ -1816,6 +1816,9 @@ body::after {
 }
 .au-modal-profile {
   width: 440px;
+  max-height: min(88vh, 860px);
+  display: flex;
+  flex-direction: column;
 }
 .au-modal-header {
   display: flex; align-items: center; justify-content: space-between;
@@ -1831,6 +1834,12 @@ body::after {
 .au-modal-close:hover { color: var(--text); }
 .au-modal-body { padding: 1rem 1.25rem; font-size: 0.85rem; color: var(--text); }
 .au-modal-body strong { color: var(--text-bright); }
+.au-modal-profile .au-modal-body {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
 .au-modal-warn {
   margin-top: 0.5rem; font-size: 0.75rem;
   color: var(--neon-red); opacity: 0.8;
@@ -2171,6 +2180,12 @@ body::after {
     max-width: none;
   }
   .au-modal-profile { width: min(94vw, 440px); }
+  .au-modal-profile {
+    max-height: calc(100vh - 1.4rem);
+  }
+  .au-modal-profile .au-modal-body {
+    padding-right: 1rem;
+  }
   .au-profile-photo-block {
     flex-direction: column;
     align-items: stretch;
