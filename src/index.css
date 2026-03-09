@@ -1862,6 +1862,70 @@ body::after {
 .au-inline-action {
   margin-top: 0.9rem;
 }
+.au-history-block {
+  margin-top: 1rem;
+  padding-top: 0.9rem;
+  border-top: 1px solid var(--border-dim);
+}
+.au-history-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+.au-history-item {
+  padding: 0.65rem 0.75rem;
+  border-radius: var(--radius);
+  border: 1px solid var(--border-dim);
+  background: var(--bg-card);
+}
+.au-history-main {
+  min-width: 0;
+}
+.au-history-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.6rem;
+  font-size: 0.82rem;
+  color: var(--text-bright);
+}
+.au-history-meta {
+  margin-top: 0.2rem;
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  line-height: 1.6;
+}
+.au-history-tag {
+  flex-shrink: 0;
+  padding: 0.08rem 0.45rem;
+  border-radius: 999px;
+  border: 1px solid var(--border-dim);
+  font-size: 0.66rem;
+}
+.au-history-tag.checked {
+  color: var(--neon-green);
+  border-color: rgba(0, 255, 65, 0.35);
+  background: rgba(0, 255, 65, 0.08);
+}
+.au-history-tag.cancelled {
+  color: var(--neon-red);
+  border-color: rgba(255, 0, 64, 0.35);
+  background: rgba(255, 0, 64, 0.08);
+}
+.au-history-tag.expired {
+  color: var(--neon-yellow);
+  border-color: rgba(255, 184, 0, 0.35);
+  background: rgba(255, 184, 0, 0.08);
+}
+.au-history-tag.active {
+  color: var(--neon-cyan);
+  border-color: rgba(0, 212, 255, 0.35);
+  background: rgba(0, 212, 255, 0.08);
+}
+.au-history-more {
+  margin-top: 0.75rem;
+  width: 100%;
+}
 .au-profile-photo-block {
   display: flex;
   align-items: center;

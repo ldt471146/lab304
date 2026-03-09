@@ -7,6 +7,7 @@ import { Users, Search, Clock, Star, Trash2, X, Check, Ban, Eye, SlidersHorizont
 
 export default function AdminUsersPage() {
   const PAGE_SIZE = 10
+  const HISTORY_PAGE_SIZE = 50
   const { profile } = useAuth()
   const navigate = useNavigate()
   const [users, setUsers] = useState([])
@@ -20,6 +21,11 @@ export default function AdminUsersPage() {
   const [strikeSaving, setStrikeSaving] = useState(false)
   const [strikeError, setStrikeError] = useState(null)
   const [photoPreview, setPhotoPreview] = useState(null)
+  const [reservationHistory, setReservationHistory] = useState([])
+  const [historyLoading, setHistoryLoading] = useState(false)
+  const [historyLoadingMore, setHistoryLoadingMore] = useState(false)
+  const [historyHasMore, setHistoryHasMore] = useState(false)
+  const [historyError, setHistoryError] = useState(null)
   const [deleting, setDeleting] = useState(false)
   const [page, setPage] = useState(1)
   const [ruleForm, setRuleForm] = useState({
@@ -107,6 +113,18 @@ export default function AdminUsersPage() {
     return () => window.removeEventListener('keydown', handleKeyDown)
   }, [photoPreview])
 
+  useEffect(() => {
+    if (!viewUser) {
+      setReservationHistory([])
+      setHistoryLoading(false)
+      setHistoryLoadingMore(false)
+      setHistoryHasMore(false)
+      setHistoryError(null)
+      return
+    }
+    fetchReservationHistory(viewUser.id, 0, false)
+  }, [viewUser])
+
   async function handleDelete() {
     if (!confirmUser) return
     setDeleting(true)
@@ -164,6 +182,81 @@ export default function AdminUsersPage() {
     setStrikeEditor(user)
     setStrikeValue(String(Math.max(0, Number(user?.reservation_strikes || 0))))
     setStrikeError(null)
+  }
+
+  async function fetchReservationHistory(userId, offset = 0, append = false) {
+    if (!userId) return
+    if (append) setHistoryLoadingMore(true)
+    else {
+      setHistoryLoading(true)
+      setReservationHistory([])
+    }
+    setHistoryError(null)
+
+    const { data: reservations, error } = await supabase
+      .from('reservations')
+      .select('id, reserve_date, status, created_at, seat_id, seats(seat_number)')
+      .eq('user_id', userId)
+      .order('reserve_date', { ascending: false })
+      .order('created_at', { ascending: false })
+      .range(offset, offset + HISTORY_PAGE_SIZE - 1)
+
+    if (error) {
+      setHistoryError(error.message)
+      setHistoryLoading(false)
+      setHistoryLoadingMore(false)
+      return
+    }
+
+    const rows = reservations || []
+    const dates = [...new Set(rows.map(r => r.reserve_date).filter(Boolean))]
+    let checkedKeys = new Set()
+
+    if (dates.length > 0) {
+      const { data: checkins, error: checkinError } = await supabase
+        .from('checkins')
+        .select('seat_id, check_date')
+        .eq('user_id', userId)
+        .in('check_date', dates)
+
+      if (checkinError) {
+        setHistoryError(checkinError.message)
+        setHistoryLoading(false)
+        setHistoryLoadingMore(false)
+        return
+      }
+
+      checkedKeys = new Set((checkins || []).map(c => `${c.seat_id}:${c.check_date}`))
+    }
+
+    const today = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Shanghai' })
+    const mapped = rows.map(item => {
+      const hasCheckin = checkedKeys.has(`${item.seat_id}:${item.reserve_date}`)
+      let statusLabel = '生效中'
+      let statusClass = 'active'
+
+      if (hasCheckin) {
+        statusLabel = '已签到'
+        statusClass = 'checked'
+      } else if (item.status !== 'active') {
+        statusLabel = '已取消'
+        statusClass = 'cancelled'
+      } else if (item.reserve_date < today) {
+        statusLabel = '已过期未签到'
+        statusClass = 'expired'
+      }
+
+      return {
+        ...item,
+        statusLabel,
+        statusClass,
+      }
+    })
+
+    setReservationHistory(prev => (append ? [...prev, ...mapped] : mapped))
+    setHistoryHasMore(rows.length === HISTORY_PAGE_SIZE)
+    setHistoryLoading(false)
+    setHistoryLoadingMore(false)
   }
 
   function closeStrikeEditor() {
@@ -254,6 +347,11 @@ export default function AdminUsersPage() {
       title: `${user?.name || '用户'}的照片`,
       hint: user?.id_photo_url ? '个人照片' : '未上传个人照片，当前显示头像',
     })
+  }
+
+  function openViewUser(user) {
+    setPhotoPreview(null)
+    setViewUser(user)
   }
 
   function closeViewUser() {
@@ -409,7 +507,7 @@ export default function AdminUsersPage() {
               </div>
               <span className="au-date">{u.reservation_restricted_until ? `限制至 ${formatRestrictDate(u.reservation_restricted_until)}` : '未限制'}</span>
               <span className="au-date">{new Date(u.created_at).toLocaleDateString('zh-CN')}</span>
-              <button className="au-del-btn" onClick={() => setViewUser(u)} title="查看资料">
+              <button className="au-del-btn" onClick={() => openViewUser(u)} title="查看资料">
                 <Eye size={14} />
               </button>
               {(profile.is_super_admin || !u.is_super_admin) && (
@@ -516,6 +614,44 @@ export default function AdminUsersPage() {
                   <button type="button" className="btn-preset au-inline-action" onClick={() => openStrikeEditor(viewUser)}>
                     修改标记
                   </button>
+                )}
+              </div>
+              <div className="au-history-block">
+                <div className="section-title">预约历史</div>
+                {historyLoading ? (
+                  <div className="loading">预约记录加载中...</div>
+                ) : historyError ? (
+                  <div className="msg error">{historyError}</div>
+                ) : reservationHistory.length === 0 ? (
+                  <div className="empty-hint">暂无预约记录</div>
+                ) : (
+                  <>
+                    <div className="au-history-list">
+                      {reservationHistory.map(item => (
+                        <div key={item.id} className="au-history-item">
+                          <div className="au-history-main">
+                            <div className="au-history-title">
+                              <span>{item.reserve_date || '--'}</span>
+                              <span className={`au-history-tag ${item.statusClass}`}>{item.statusLabel}</span>
+                            </div>
+                            <div className="au-history-meta">
+                              座位 {item.seats?.seat_number || item.seat_id || '--'} // 创建于 {new Date(item.created_at).toLocaleString('zh-CN', { hour12: false })}
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                    {historyHasMore && (
+                      <button
+                        type="button"
+                        className="btn-preset au-history-more"
+                        onClick={() => fetchReservationHistory(viewUser.id, reservationHistory.length, true)}
+                        disabled={historyLoadingMore}
+                      >
+                        {historyLoadingMore ? '加载中...' : '加载更多'}
+                      </button>
+                    )}
+                  </>
                 )}
               </div>
             </div>
