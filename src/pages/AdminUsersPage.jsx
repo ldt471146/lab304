@@ -26,6 +26,12 @@ export default function AdminUsersPage() {
   const [historyLoadingMore, setHistoryLoadingMore] = useState(false)
   const [historyHasMore, setHistoryHasMore] = useState(false)
   const [historyError, setHistoryError] = useState(null)
+  const [viewStats, setViewStats] = useState({
+    reservationCount: 0,
+    checkinCount: 0,
+    loading: false,
+    error: null,
+  })
   const [deleting, setDeleting] = useState(false)
   const [page, setPage] = useState(1)
   const [ruleForm, setRuleForm] = useState({
@@ -120,8 +126,15 @@ export default function AdminUsersPage() {
       setHistoryLoadingMore(false)
       setHistoryHasMore(false)
       setHistoryError(null)
+      setViewStats({
+        reservationCount: 0,
+        checkinCount: 0,
+        loading: false,
+        error: null,
+      })
       return
     }
+    fetchViewStats(viewUser.id)
     fetchReservationHistory(viewUser.id, 0, false)
   }, [viewUser])
 
@@ -182,6 +195,43 @@ export default function AdminUsersPage() {
     setStrikeEditor(user)
     setStrikeValue(String(Math.max(0, Number(user?.reservation_strikes || 0))))
     setStrikeError(null)
+  }
+
+  async function fetchViewStats(userId) {
+    if (!userId) return
+    setViewStats(prev => ({ ...prev, loading: true, error: null }))
+
+    const [
+      { count: reservationCount, error: reservationError },
+      { count: checkinCount, error: checkinError },
+    ] = await Promise.all([
+      supabase
+        .from('reservations')
+        .select('id', { count: 'exact', head: true })
+        .eq('user_id', userId),
+      supabase
+        .from('checkins')
+        .select('id', { count: 'exact', head: true })
+        .eq('user_id', userId),
+    ])
+
+    const error = reservationError || checkinError
+    if (error) {
+      setViewStats({
+        reservationCount: 0,
+        checkinCount: 0,
+        loading: false,
+        error: error.message,
+      })
+      return
+    }
+
+    setViewStats({
+      reservationCount: Number(reservationCount || 0),
+      checkinCount: Number(checkinCount || 0),
+      loading: false,
+      error: null,
+    })
   }
 
   async function fetchReservationHistory(userId, offset = 0, append = false) {
@@ -608,8 +658,11 @@ export default function AdminUsersPage() {
                 <div><b>班级</b>：{viewUser.class_name || '--'}</div>
                 <div><b>邮箱</b>：{viewUser.email || '--'}</div>
                 <div><b>联系电话</b>：{viewUser.phone || '--'}</div>
+                <div><b>预约次数</b>：{viewStats.loading ? '统计中...' : viewStats.reservationCount}</div>
+                <div><b>签到次数</b>：{viewStats.loading ? '统计中...' : viewStats.checkinCount}</div>
                 <div><b>标记次数</b>：{Number(viewUser.reservation_strikes || 0)}</div>
                 <div><b>限制到期</b>：{formatRestrictDate(viewUser.reservation_restricted_until)}</div>
+                {viewStats.error && <div className="au-modal-note">统计加载失败：{viewStats.error}</div>}
                 {(profile.is_super_admin || !viewUser.is_super_admin) && (
                   <button type="button" className="btn-preset au-inline-action" onClick={() => openStrikeEditor(viewUser)}>
                     修改标记
