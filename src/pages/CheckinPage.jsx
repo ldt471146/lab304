@@ -18,10 +18,12 @@ export default function CheckinPage() {
   const { profile, fetchProfile } = useAuth()
   const navigate = useNavigate()
   const [todayCheckins, setTodayCheckins] = useState([])
+  const [staleOpenCheckin, setStaleOpenCheckin] = useState(null)
   const [myReservations, setMyReservations] = useState([])
   const [selectedReservationId, setSelectedReservationId] = useState(null)
   const [loading, setLoading] = useState(false)
   const [checkoutLoading, setCheckoutLoading] = useState(false)
+  const [recoverLoading, setRecoverLoading] = useState(false)
   const [msg, setMsg] = useState(null)
   const [elapsed, setElapsed] = useState('')
 
@@ -30,7 +32,7 @@ export default function CheckinPage() {
 
   const activeCheckin = todayCheckins.find(c => !c.checked_out_at) || null
   const finishedCheckins = todayCheckins.filter(c => c.checked_out_at)
-  const canCheckin = open && !activeCheckin && myReservations.length > 0
+  const canCheckin = open && !activeCheckin && !staleOpenCheckin && myReservations.length > 0
 
   const fetchTodayCheckins = useCallback(async () => {
     if (!profile) return
@@ -38,6 +40,28 @@ export default function CheckinPage() {
       .eq('user_id', profile.id).eq('check_date', today).order('checked_at', { ascending: false })
     if (error) console.error('fetchTodayCheckins:', error.message)
     setTodayCheckins(data || [])
+  }, [profile, today])
+
+  const fetchStaleOpenCheckin = useCallback(async () => {
+    if (!profile) return
+    const { data, error } = await supabase
+      .from('checkins')
+      .select('id, check_date, checked_at, checked_out_at, seat_id, seats(seat_number)')
+      .eq('user_id', profile.id)
+      .is('checked_out_at', null)
+      .order('checked_at', { ascending: false })
+      .limit(1)
+      .maybeSingle()
+    if (error) {
+      console.error('fetchStaleOpenCheckin:', error.message)
+      setStaleOpenCheckin(null)
+      return
+    }
+    if (!data || data.check_date === today) {
+      setStaleOpenCheckin(null)
+      return
+    }
+    setStaleOpenCheckin(data)
   }, [profile, today])
 
   const fetchMyReservations = useCallback(async () => {
@@ -55,8 +79,9 @@ export default function CheckinPage() {
 
   useEffect(() => {
     fetchTodayCheckins()
+    fetchStaleOpenCheckin()
     fetchMyReservations()
-  }, [fetchTodayCheckins, fetchMyReservations])
+  }, [fetchTodayCheckins, fetchMyReservations, fetchStaleOpenCheckin])
 
   useEffect(() => {
     if (myReservations.length === 1) {
@@ -111,7 +136,7 @@ export default function CheckinPage() {
       setMsg({ type: 'error', text: error.message })
     } else {
       setMsg({ type: 'success', text: '签到成功' })
-      await Promise.all([fetchTodayCheckins(), fetchMyReservations(), fetchProfile(profile.id)])
+      await Promise.all([fetchTodayCheckins(), fetchStaleOpenCheckin(), fetchMyReservations(), fetchProfile(profile.id)])
     }
     setLoading(false)
   }
@@ -124,9 +149,22 @@ export default function CheckinPage() {
       setMsg({ type: 'error', text: error.message })
     } else {
       setMsg({ type: 'success', text: '签退成功' })
-      await Promise.all([fetchTodayCheckins(), fetchMyReservations(), fetchProfile(profile.id)])
+      await Promise.all([fetchTodayCheckins(), fetchStaleOpenCheckin(), fetchMyReservations(), fetchProfile(profile.id)])
     }
     setCheckoutLoading(false)
+  }
+
+  async function handleRecoverStaleCheckin() {
+    if (!staleOpenCheckin) return
+    setRecoverLoading(true); setMsg(null)
+    const { error } = await supabase.rpc('recover_stale_checkin')
+    if (error) {
+      setMsg({ type: 'error', text: error.message })
+    } else {
+      setMsg({ type: 'success', text: '旧未签退记录已恢复，可重新签到' })
+      await Promise.all([fetchTodayCheckins(), fetchStaleOpenCheckin(), fetchMyReservations(), fetchProfile(profile.id)])
+    }
+    setRecoverLoading(false)
   }
 
   const formatTime = (iso) => iso ? new Date(iso).toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' }) : '--'
@@ -140,6 +178,27 @@ export default function CheckinPage() {
       </div>
 
       {msg && <div className={`msg ${msg.type}`}>{msg.text}</div>}
+
+      {staleOpenCheckin && (
+        <div className="stale-checkin-card">
+          <div className="stale-checkin-info">
+            <div className="stale-checkin-title">
+              <Clock size={18} />
+              <span>检测到未签退记录</span>
+            </div>
+            <div className="stale-checkin-meta">
+              {staleOpenCheckin.seats?.seat_number && `座位 ${staleOpenCheckin.seats.seat_number} // `}
+              {staleOpenCheckin.check_date} {formatTime(staleOpenCheckin.checked_at)}
+            </div>
+            <div className="stale-checkin-note">
+              这条旧记录会按原签到时间直接关闭，不补学习时长。恢复后即可继续签到。
+            </div>
+          </div>
+          <button className="btn-stale-recover" onClick={handleRecoverStaleCheckin} disabled={recoverLoading}>
+            {recoverLoading ? '处理中...' : '恢复签到状态'}
+          </button>
+        </div>
+      )}
 
       {todayCheckins.length > 0 && (
         <div className="today-study-summary">

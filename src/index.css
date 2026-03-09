@@ -672,6 +672,63 @@ body::after {
   font-variant-numeric: tabular-nums;
 }
 
+.stale-checkin-card {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem 1.15rem;
+  margin-bottom: 1rem;
+  border-radius: var(--radius-lg);
+  border: 1px solid rgba(255, 107, 0, 0.35);
+  background: rgba(255, 107, 0, 0.06);
+  box-shadow: 0 0 14px rgba(255, 107, 0, 0.08);
+}
+.stale-checkin-info {
+  flex: 1;
+  min-width: 0;
+}
+.stale-checkin-title {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  margin-bottom: 0.3rem;
+  color: var(--neon-orange);
+  font-size: 0.96rem;
+  font-weight: 600;
+}
+.stale-checkin-meta {
+  font-size: 0.78rem;
+  color: var(--text);
+}
+.stale-checkin-note {
+  margin-top: 0.35rem;
+  font-size: 0.74rem;
+  line-height: 1.6;
+  color: var(--text-muted);
+}
+.btn-stale-recover {
+  flex-shrink: 0;
+  padding: 0.8rem 1rem;
+  border-radius: var(--radius-lg);
+  border: 1px solid rgba(255, 107, 0, 0.55);
+  background: transparent;
+  color: var(--neon-orange);
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.btn-stale-recover:hover {
+  background: rgba(255, 107, 0, 0.1);
+  box-shadow: 0 0 16px rgba(255, 107, 0, 0.2);
+}
+.btn-stale-recover:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
 .btn-checkout-lg {
   display: flex; flex-direction: column; align-items: center; gap: 0.3rem;
   padding: 0.9rem 1.3rem; border: 1.5px solid var(--neon-yellow);
@@ -1986,11 +2043,19 @@ body::after {
     padding: 1rem;
     text-align: center;
   }
+  .stale-checkin-card {
+    flex-direction: column;
+    align-items: stretch;
+    text-align: center;
+  }
   .btn-checkout-lg {
     width: 100%;
     flex-direction: row;
     justify-content: center;
     padding: 0.75rem;
+  }
+  .btn-stale-recover {
+    width: 100%;
   }
 
   /* Seat map */
